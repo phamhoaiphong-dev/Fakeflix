@@ -1,20 +1,18 @@
-import Box, { BoxProps } from "@mui/material/Box";
-import { Link as RouterLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { MAIN_PATH } from "src/constant";
 
-export default function Logo({ sx }: BoxProps) {
+interface LogoProps {
+  className?: string;
+}
+
+export default function Logo({ className = "" }: LogoProps) {
   return (
-    <RouterLink to={`/${MAIN_PATH.browse}`}>
-      <Box
-        component="img"
-        alt="Netflix Logo"
+    <Link to={`/${MAIN_PATH.browse}`}>
+      <img
         src="/assets/netflix-logo.png"
-        width={87}
-        height={25}
-        sx={{
-          ...sx,
-        }}
+        alt="Netflix Logo"
+        className={`w-[87px] h-[25px] ${className}`}
       />
-    </RouterLink>
+    </Link>
   );
 }

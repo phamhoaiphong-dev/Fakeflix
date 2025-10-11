@@ -1,36 +1,34 @@
-import Button, { ButtonProps } from "@mui/material/Button";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { Info } from "lucide-react";
 
-export default function MoreInfoButton({ sx, ...others }: ButtonProps) {
+interface MoreInfoButtonProps {
+  onClick?: () => void;
+  className?: string;
+  children?: string;
+}
+
+export default function MoreInfoButton({
+  onClick,
+  className = "",
+  children = "More Info",
+}: MoreInfoButtonProps) {
   return (
-    <Button
-      variant="contained"
-      startIcon={
-        <InfoOutlinedIcon
-          sx={{
-            fontSize: {
-              xs: "24px !important",
-              sm: "32px !important",
-              md: "40px !important",
-            },
-          }}
-        />
-      }
-      {...others}
-      sx={{
-        ...sx,
-        px: { xs: 1, sm: 2 },
-        py: { xs: 0.5, sm: 1 },
-        fontSize: { xs: 18, sm: 24, md: 28 },
-        lineHeight: 1.5,
-        fontWeight: "bold",
-        textTransform: "capitalize",
-        bgcolor: "#6d6d6eb3",
-        whiteSpace: "nowrap",
-        "&:hover": { bgcolor: "#6d6d6e66" },
-      }}
+    <button
+      onClick={onClick}
+      className={`
+        flex items-center space-x-2
+        px-2 sm:px-4 py-1 sm:py-2
+        text-[18px] sm:text-[24px] md:text-[28px]
+        font-bold
+        capitalize
+        whitespace-nowrap
+        bg-[#6d6d6eb3]
+        hover:bg-[#6d6d6e66]
+        rounded
+        ${className}
+      `}
     >
-      More Info
-    </Button>
+      <Info className="w-6 h-6 sm:w-8 md:w-10" />
+      <span>{children}</span>
+    </button>
   );
 }

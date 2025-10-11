@@ -1,5 +1,4 @@
 import { Outlet, useLocation, useNavigation } from "react-router-dom";
-import Box from "@mui/material/Box";
 
 import DetailModal from "src/components/DetailModal";
 import VideoPortalContainer from "src/components/VideoPortalContainer";
@@ -12,26 +11,25 @@ import MainLoadingScreen from "src/components/MainLoadingScreen";
 export default function MainLayout() {
   const location = useLocation();
   const navigation = useNavigation();
-  // console.log("Nav Stat: ", navigation.state);
+
   return (
-    <Box
-      sx={{
-        width: "100%",
-        minHeight: "100vh",
-        bgcolor: "background.default",
-      }}
-    >
+    <div className="w-full min-h-screen bg-black px-0">
       <MainHeader />
-      {navigation.state !== "idle" && <MainLoadingScreen />}
+      {navigation.state !== "idle" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+          <MainLoadingScreen />
+        </div>
+
+      )}
       <DetailModalProvider>
         <DetailModal />
         <PortalProvider>
-          {/* <MainLoadingScreen /> */}
           <Outlet />
           <VideoPortalContainer />
         </PortalProvider>
       </DetailModalProvider>
-      {location.pathname !== `/${MAIN_PATH.watch}` && <Footer />}
-    </Box>
+
+      {!location.pathname.startsWith(`/${MAIN_PATH.watch}`) && <Footer />}
+    </div>
   );
 }

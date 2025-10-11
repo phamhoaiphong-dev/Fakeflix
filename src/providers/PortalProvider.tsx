@@ -1,13 +1,13 @@
 import { ReactNode, useState, useCallback } from "react";
-import { Movie } from "src/types/Movie";
+import { KKPhimMovie} from "src/types/KKPhim";
 import createSafeContext from "src/lib/createSafeContext";
 
 export interface PortalConsumerProps {
-  setPortal: (anchor: HTMLElement | null, vidoe: Movie | null) => void;
+  setPortal: (anchor: HTMLElement | null, video: KKPhimMovie | null) => void;
 }
 export interface PortalDataConsumerProps {
   anchorElement: HTMLElement | null;
-  miniModalMediaData: Movie | null;
+  miniModalMediaData: KKPhimMovie | null;
 }
 
 export const [usePortal, Provider] =
@@ -18,12 +18,12 @@ export const [usePortalData, PortalDataProvider] =
 
 export default function PortalProvider({ children }: { children: ReactNode }) {
   const [anchorElement, setAnchorElement] = useState<HTMLElement | null>(null);
-  const [miniModalMediaData, setMiniModalMediaData] = useState<Movie | null>(
+  const [miniModalMediaData, setMiniModalMediaData] = useState<KKPhimMovie | null>(
     null
   );
 
   const handleChangePortal = useCallback(
-    (anchor: HTMLElement | null, video: Movie | null) => {
+    (anchor: HTMLElement | null, video: KKPhimMovie | null) => {
       setAnchorElement(anchor);
       setMiniModalMediaData(video);
     },

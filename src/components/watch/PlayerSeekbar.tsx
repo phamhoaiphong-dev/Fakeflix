@@ -1,80 +1,49 @@
-import Slider from "@mui/material/Slider";
-import { styled } from "@mui/material/styles";
-
+import { ChangeEvent } from "react";
 import { formatTime } from "src/utils/common";
 
-const StyledSlider = styled(Slider)({
-  borderRadius: 0,
-  "& .NetflixSlider-track": {
-    backgroundColor: "red !important",
-    border: 0,
-  },
-  "& .NetflixSlider-rail": {
-    border: "none",
-    backgroundColor: "white !important",
-    opacity: 0.85,
-  },
-  "& .NetflixSlider-thumb": {
-    borderRadius: "50%",
-    height: 10,
-    width: 10,
-    backgroundColor: "red",
-    "&:focus, &:hover, &.Netflix-active, &.Netflix-focusVisible": {
-      boxShadow: "inherit",
-      height: 15,
-      width: 15,
-    },
-    "&:before": {
-      display: "none",
-      boxShadow: "0 2px 2px 0 #fff",
-      height: 10,
-      width: 10,
-    },
-  },
-  // "& .NetflixSlider-valueLabel": {
-  //   lineHeight: 1.2,
-  //   fontSize: 12,
-  //   background: "unset",
-  //   padding: 0,
-  //   width: 32,
-  //   height: 32,
-  //   borderRadius: "50% 50% 50% 0",
-  //   backgroundColor: "#52af77",
-  //   transformOrigin: "bottom left",
-  //   transform: "translate(50%, -100%) rotate(-45deg) scale(0)",
-  //   "&:before": { display: "none" },
-  //   "&.NetflixSlider-valueLabelOpen": {
-  //     transform: "translate(50%, -100%) rotate(-45deg) scale(1)",
-  //   },
-  //   "& > *": {
-  //     transform: "rotate(45deg)",
-  //   },
-  // },
-});
-
-function PlayerSeekbar({
-  playedSeconds,
-  duration,
-  seekTo,
-}: {
+interface PlayerSeekbarProps {
   playedSeconds: number;
   duration: number;
   seekTo: (value: number) => void;
-}) {
-  return (
-    <StyledSlider
-      valueLabelDisplay="auto"
-      valueLabelFormat={(v) => formatTime(v)}
-      // components={{
-      //   ValueLabel: ValueLabelComponent,
-      // }}
-      value={playedSeconds}
-      max={duration}
-      onChange={(_, value) => {
-        seekTo(value as number);
-      }}
-    />
-  );
 }
 
-export default PlayerSeekbar;
+export default function PlayerSeekbar({
+  playedSeconds,
+  duration,
+  seekTo,
+}: PlayerSeekbarProps) {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    seekTo(Number(e.target.value));
+  };
+
+  const playedPercent = (playedSeconds / duration) * 100;
+
+  return (
+    <div className="relative w-full h-3 flex items-center">
+      {/* Rail */}
+      <div className="absolute w-full h-1 bg-white bg-opacity-80 rounded"></div>
+      {/* Track */}
+      <div
+        className="absolute h-1 bg-red-600 rounded"
+        style={{ width: `${playedPercent}%` }}
+      ></div>
+      {/* Thumb */}
+      <input
+        type="range"
+        min={0}
+        max={duration}
+        value={playedSeconds}
+        onChange={handleChange}
+        className="w-full h-3 appearance-none bg-transparent cursor-pointer
+          focus:outline-none
+          [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:transition-transform
+          [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-red-600 [&::-moz-range-thumb]:hover:scale-125 [&::-moz-range-thumb]:transition-transform
+        "
+      />
+      {/* Time labels */}
+      <div className="absolute right-0 top-5 text-xs text-white">
+        {formatTime(playedSeconds)} / {formatTime(duration)}
+      </div>
+    </div>
+  );
+}

@@ -1,36 +1,68 @@
-import Stack from "@mui/material/Stack";
-import { COMMON_TITLES } from "src/constant";
+// src/pages/HomePage.tsx
+import { useEffect, useState } from "react";
 import HeroSection from "src/components/HeroSection";
-import { genreSliceEndpoints, useGetGenresQuery } from "src/store/slices/genre";
-import { MEDIA_TYPE } from "src/types/Common";
-import { CustomGenre, Genre } from "src/types/Genre";
-import SliderRowForGenre from "src/components/VideoSlider";
-import store from "src/store";
+import SliderRowForGenre from "src/components/SliderRowForGenre";
+import { fetchTrending, fetchTopRated, fetchTVShows, fetchAnime, fetchByCountry } from "src/services/netflixService";
 
-export async function loader() {
-  await store.dispatch(
-    genreSliceEndpoints.getGenres.initiate(MEDIA_TYPE.Movie)
-  );
-  return null;
-}
-export function Component() {
-  const { data: genres, isSuccess } = useGetGenresQuery(MEDIA_TYPE.Movie);
+export default function HomePage() {
+  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState<
+    { title: string; movies: any[] }[]
+  >([]);
 
-  if (isSuccess && genres && genres.length > 0) {
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      const [trending, topRated, tvShows, anime, korean, usa] = await Promise.all([
+        fetchTrending(),
+        fetchTopRated(),
+        fetchTVShows(),
+        fetchAnime(),
+        fetchByCountry("han-quoc"),
+        fetchByCountry("au-my"),
+      ]);
+
+
+      setRows([
+        { title: "Trending Now", movies: trending || [] },
+        { title: "Made in Korea", movies: korean || [] },
+        { title: "Made in GloBal", movies: usa || [] },
+        { title: "Top Rated", movies: topRated || [] },
+        { title: "TV Shows", movies: tvShows || [] },
+        { title: "Anime", movies: anime || [] },
+      ]);
+
+      setLoading(false);
+    }
+    loadData();
+  }, []);
+
+
+  if (loading) {
     return (
-      <Stack spacing={2}>
-        <HeroSection mediaType={MEDIA_TYPE.Movie} />
-        {[...COMMON_TITLES, ...genres].map((genre: Genre | CustomGenre) => (
-          <SliderRowForGenre
-            key={genre.id || genre.name}
-            genre={genre}
-            mediaType={MEDIA_TYPE.Movie}
-          />
-        ))}
-      </Stack>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
     );
   }
-  return null;
-}
 
-Component.displayName = "HomePage";
+  const trendingRow = rows.find((r) => r.title === "Trending Now");
+
+  return (
+    <div className="min-h-screen bg-black text-white">
+      {/* Hero Section: random movie trong trending */}
+      {trendingRow && trendingRow.movies.length > 0 && (
+        <div className="netflix-hero">
+          <HeroSection movie={trendingRow.movies[Math.floor(Math.random() * trendingRow.movies.length)]} />
+        </div>
+      )}
+
+      {/* Render rows theo config */}
+      <div className="netflix-container space-y-8 py-6">
+        {rows.map((row) => (
+          <SliderRowForGenre key={row.title} title={row.title} movies={row.movies} />
+        ))}
+      </div>
+    </div>
+  );
+}

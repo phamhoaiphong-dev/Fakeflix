@@ -1,49 +1,27 @@
-import {
-  LoaderFunctionArgs,
-  useLoaderData,
-  // useParams
-} from "react-router-dom";
-import { COMMON_TITLES } from "src/constant";
+import { LoaderFunctionArgs, useLoaderData } from "react-router-dom";
 import GridPage from "src/components/GridPage";
-import { MEDIA_TYPE } from "src/types/Common";
-import { CustomGenre, Genre } from "src/types/Genre";
-import {
-  genreSliceEndpoints,
-  // useGetGenresQuery
-} from "src/store/slices/genre";
-import store from "src/store";
+import { MEDIA_TYPE } from "src/types/Types";
+import { KKPhimCategory } from "src/types/KKPhim";
+import { getCategories } from "src/services/movieService"; 
 
+// Loader lấy category theo slug
 export async function loader({ params }: LoaderFunctionArgs) {
-  let genre: CustomGenre | Genre | undefined = COMMON_TITLES.find(
-    (t) => t.apiString === (params.genreId as string)
-  );
-  if (!genre) {
-    const genres = await store
-      .dispatch(genreSliceEndpoints.getGenres.initiate(MEDIA_TYPE.Movie))
-      .unwrap();
-    genre = genres?.find((t) => t.id.toString() === (params.genreId as string));
-  }
+  const slug = params.genreId as string;
 
-  return genre;
+  // Lấy danh sách categories từ KKPhim
+  const res = await getCategories();
+  const categories: KKPhimCategory[] = res.data.items;
+
+  // Tìm category theo slug
+  const category = categories.find((c) => c.slug === slug);
+
+  return category;
 }
 
-export function Component() {
-  const genre: CustomGenre | Genre | undefined = useLoaderData() as
-    | CustomGenre
-    | Genre
-    | undefined;
-  // const { genreId } = useParams();
-  // const { data: genres } = useGetGenresQuery(MEDIA_TYPE.Movie);
-  // let genre: Genre | CustomGenre | undefined;
-  // if (isNaN(parseInt(genreId!))) {
-  //   genre = COMMON_TITLES.find((t) => t.apiString === genreId);
-  // } else {
-  //   genre = genres?.find((t) => t.id.toString() === genreId);
-  // }
-  if (genre) {
-    return <GridPage mediaType={MEDIA_TYPE.Movie} genre={genre} />;
-  }
-  return null;
-}
+export default function GenreExplore() {
+  const category = useLoaderData() as KKPhimCategory | undefined;
 
-Component.displayName = "GenreExplore";
+  if (!category) return null;
+
+  return <GridPage mediaType={MEDIA_TYPE.PhimBo} genre={category} />;
+}

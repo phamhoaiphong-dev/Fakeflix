@@ -1,25 +1,27 @@
-import { forwardRef } from "react";
-import IconButton, { IconButtonProps } from "@mui/material/IconButton";
+import { forwardRef, ReactNode, ButtonHTMLAttributes } from "react";
 
-const NetflixIconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ children, sx, ...others }, ref) => {
+interface NetflixIconButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children: ReactNode;
+  className?: string;
+}
+
+const NetflixIconButton = forwardRef<HTMLButtonElement, NetflixIconButtonProps>(
+  ({ children, className = "", ...props }, ref) => {
     return (
-      <IconButton
-        sx={{
-          color: "white",
-          borderWidth: "2px",
-          borderStyle: "solid",
-          borderColor: "grey.700",
-          "&:hover, &:focus": {
-            borderColor: "grey.200",
-          },
-          ...sx,
-        }}
-        {...others}
+      <button
         ref={ref}
+        {...props}
+        className={`
+          text-white
+          border-2 border-gray-700
+          hover:border-gray-200 focus:border-gray-200
+          rounded
+          ${className}
+        `}
       >
         {children}
-      </IconButton>
+      </button>
     );
   }
 );

@@ -1,34 +1,19 @@
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import Breadcrumbs, { BreadcrumbsProps } from "@mui/material/Breadcrumbs";
-
-const Separator = (
-  <Box
-    component="span"
-    sx={{
-      width: 4,
-      height: 4,
-      borderRadius: "50%",
-      bgcolor: "text.disabled",
-    }}
-  />
-);
-
-interface GenreBreadcrumbsProps extends BreadcrumbsProps {
+interface GenreBreadcrumbsProps {
   genres: string[];
+  className?: string;
 }
 
-export default function GenreBreadcrumbs({
-  genres,
-  ...others
-}: GenreBreadcrumbsProps) {
+export default function GenreBreadcrumbs({ genres, className = "" }: GenreBreadcrumbsProps) {
   return (
-    <Breadcrumbs separator={Separator} {...others}>
+    <nav className={`flex items-center space-x-2 ${className}`} aria-label="breadcrumb">
       {genres.map((genre, idx) => (
-        <Typography key={idx} sx={{ color: "text.primary" }}>
-          {genre}
-        </Typography>
+        <span key={idx} className="flex items-center text-gray-200">
+          <span className="text-white">{genre}</span>
+          {idx < genres.length - 1 && (
+            <span className="w-1 h-1 bg-gray-400 rounded-full mx-2 inline-block" />
+          )}
+        </span>
       ))}
-    </Breadcrumbs>
+    </nav>
   );
 }

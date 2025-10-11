@@ -1,14 +1,14 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { tmdbApi } from "./slices/apiSlice";
+import { kkphimApi } from "src/store/slices/kkphim";
 import discoverReducer from "./slices/discover";
 
 const store = configureStore({
   reducer: {
     discover: discoverReducer,
-    [tmdbApi.reducerPath]: tmdbApi.reducer,
+    [kkphimApi.reducerPath]: kkphimApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(tmdbApi.middleware),
+    getDefaultMiddleware().concat(kkphimApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

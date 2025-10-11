@@ -1,39 +1,33 @@
-import Button, { ButtonProps } from "@mui/material/Button";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import { Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MAIN_PATH } from "src/constant";
 
-export default function PlayButton({ sx, ...others }: ButtonProps) {
+interface PlayButtonProps {
+  className?: string;
+  onClick?: () => void;
+}
+
+export default function PlayButton({ className = "", onClick }: PlayButtonProps) {
   const navigate = useNavigate();
+
   return (
-    <Button
-      color="inherit"
-      variant="contained"
-      startIcon={
-        <PlayArrowIcon
-          sx={{
-            fontSize: {
-              xs: "24px !important",
-              sm: "32px !important",
-              md: "40px !important",
-            },
-          }}
-        />
-      }
-      {...others}
-      sx={{
-        px: { xs: 1, sm: 2 },
-        py: { xs: 0.5, sm: 1 },
-        fontSize: { xs: 18, sm: 24, md: 28 },
-        lineHeight: 1.5,
-        fontWeight: "bold",
-        whiteSpace: "nowrap",
-        textTransform: "capitalize",
-        ...sx,
-      }}
-      onClick={() => navigate(`/${MAIN_PATH.watch}`)}
+    <button
+      onClick={onClick ?? (() => navigate(`/${MAIN_PATH.watch}`))}
+      className={`
+        flex items-center space-x-2
+        px-2 sm:px-4 py-1 sm:py-2
+        text-[18px] sm:text-[24px] md:text-[28px]
+        font-bold
+        capitalize
+        whitespace-nowrap
+        bg-white text-black
+        rounded
+        hover:bg-gray-200
+        ${className}
+      `}
     >
-      Play
-    </Button>
+      <Play className="w-6 h-6 sm:w-8 md:w-10" />
+      <span>Play</span>
+    </button>
   );
 }

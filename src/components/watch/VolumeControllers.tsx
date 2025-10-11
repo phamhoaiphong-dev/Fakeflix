@@ -1,72 +1,51 @@
-import { Stack } from "@mui/material";
-import Slider from "@mui/material/Slider";
-import { styled } from "@mui/material/styles";
-import { SliderUnstyledOwnProps } from "@mui/base/SliderUnstyled";
-import VolumeUpIcon from "@mui/icons-material/VolumeUp";
-import VolumeOffIcon from "@mui/icons-material/VolumeOff";
+import { ChangeEvent } from "react";
 import PlayerControlButton from "./PlayerControlButton";
 
-const StyledSlider = styled(Slider)({
-  height: 5,
-  borderRadius: 0,
-  padding: 0,
-  "& .NetflixSlider-track": {
-    border: "none",
-    backgroundColor: "red",
-  },
-  "& .NetflixSlider-rail": {
-    border: "none",
-    backgroundColor: "white",
-    opacity: 0.85,
-  },
-  "& .NetflixSlider-thumb": {
-    height: 10,
-    width: 10,
-    backgroundColor: "red",
-    "&:focus, &:hover, &.Netflix-active, &.Netflix-focusVisible": {
-      boxShadow: "inherit",
-      height: 15,
-      width: 15,
-    },
-    "&:before": {
-      display: "none",
-    },
-  },
-});
+interface VolumeControllersProps {
+  value: number; // 0..1
+  muted: boolean;
+  handleVolume: (value: number) => void;
+  handleVolumeToggle: React.MouseEventHandler<HTMLButtonElement>;
+}
 
 export default function VolumeControllers({
   value,
+  muted,
   handleVolume,
   handleVolumeToggle,
-  muted,
-}: {
-  value: number;
-  handleVolume: SliderUnstyledOwnProps["onChange"];
-  handleVolumeToggle: React.MouseEventHandler<HTMLButtonElement>;
-  muted: boolean;
-}) {
+}: VolumeControllersProps) {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    handleVolume(Number(e.target.value) / 100);
+  };
+
   return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      spacing={{ xs: 0.5, sm: 1 }}
-      // sx={{
-      //   "&:hover NetflixSlider-root": {
-      //     display: "inline-block",
-      //   },
-      // }}
-    >
+    <div className="flex items-center space-x-2 sm:space-x-4">
       <PlayerControlButton onClick={handleVolumeToggle}>
-        {!muted ? <VolumeUpIcon /> : <VolumeOffIcon />}
+        {!muted ? (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5L6 9H2v6h4l5 4V5z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.07 4.93a10 10 0 010 14.14" />
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5L6 9H2v6h4l5 4V5z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M23 9l-6 6" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9l6 6" />
+          </svg>
+        )}
       </PlayerControlButton>
-      <StyledSlider
+
+      <input
+        type="range"
+        min={0}
         max={100}
-        value={value * 100}
-        valueLabelDisplay="auto"
-        valueLabelFormat={(x: number) => x}
-        onChange={handleVolume}
-        sx={{ width: { xs: 60, sm: 80, md: 100 } }}
+        value={muted ? 0 : value * 100}
+        onChange={handleChange}
+        className="h-1 w-24 sm:w-32 md:w-40 bg-white bg-opacity-50 rounded appearance-none cursor-pointer
+          [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:transition-transform
+          [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-red-600 [&::-moz-range-thumb]:hover:scale-125 [&::-moz-range-thumb]:transition-transform
+        "
       />
-    </Stack>
+    </div>
   );
 }

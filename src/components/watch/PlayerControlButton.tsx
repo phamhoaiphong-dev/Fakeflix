@@ -1,25 +1,23 @@
-import { forwardRef } from "react";
+import { forwardRef, ButtonHTMLAttributes, ReactNode } from "react";
 
-import IconButton, { IconButtonProps } from "@mui/material/IconButton";
+interface PlayerControlButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children: ReactNode;
+}
 
-const PlayerControlButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ children, ...others }, ref) => (
-    <IconButton
-      ref={ref}
-      sx={{
-        padding: { xs: 0.5, sm: 1 },
-        "& svg, & span": { transition: "transform .3s" },
-        "&:hover svg, &:hover span": {
-          msTransform: "scale(1.3)",
-          WebkitTransform: "scale(1.3)",
-          transform: "scale(1.3)",
-        },
-      }}
-      {...others}
-    >
-      {children}
-    </IconButton>
-  )
+const PlayerControlButton = forwardRef<HTMLButtonElement, PlayerControlButtonProps>(
+  ({ children, className = "", ...props }, ref) => {
+    return (
+      <button
+        ref={ref}
+        className={`p-1 sm:p-2 transform transition-transform duration-300 hover:scale-125 ${className}`}
+        {...props}
+      >
+        {children}
+      </button>
+    );
+  }
 );
+
+PlayerControlButton.displayName = "PlayerControlButton";
 
 export default PlayerControlButton;

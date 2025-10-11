@@ -1,18 +1,14 @@
 import { useRef, useEffect } from "react";
-import Grid from "@mui/material/Grid";
-import Box from "@mui/material/Box";
-import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
 import VideoItemWithHover from "./VideoItemWithHover";
-import { CustomGenre, Genre } from "src/types/Genre";
-import { PaginatedMovieResult } from "src/types/Common";
+import { KKCategory, KKCountry, PaginatedMovieResult } from "src/types/Types";
 import useIntersectionObserver from "src/hooks/useIntersectionObserver";
 
 interface GridWithInfiniteScrollProps {
-  genre: Genre | CustomGenre;
+  genre: KKCategory | KKCountry;
   data: PaginatedMovieResult;
   handleNext: (page: number) => void;
 }
+
 export default function GridWithInfiniteScroll({
   genre,
   data,
@@ -33,37 +29,19 @@ export default function GridWithInfiniteScroll({
 
   return (
     <>
-      <Container
-        maxWidth={false}
-        sx={{
-          px: { xs: "30px", sm: "60px" },
-          pb: 4,
-          pt: "150px",
-          bgcolor: "inherit",
-        }}
-      >
-        <Typography
-          variant="h5"
-          sx={{ color: "text.primary", mb: 2 }}
-        >{`${genre.name} Movies`}</Typography>
-        <Grid container spacing={2}>
+      <div className="px-8 sm:px-16 pt-[150px] pb-16 bg-inherit max-w-full">
+        <h2 className="text-2xl text-white mb-4">{`${genre.name} Movies`}</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 z-10">
           {data.results
-            .filter((v) => !!v.backdrop_path)
+            .filter((v) => !!v.poster_url || !!v.thumb_url)
             .map((video, idx) => (
-              <Grid
-                key={`${video.id}_${idx}`}
-                item
-                xs={6}
-                sm={3}
-                md={2}
-                sx={{ zIndex: 1 }}
-              >
+              <div key={`${video._id}_${idx}`} className="relative">
                 <VideoItemWithHover video={video} />
-              </Grid>
+              </div>
             ))}
-        </Grid>
-      </Container>
-      <Box sx={{ display: "hidden" }} ref={intersectionRef} />
+        </div>
+      </div>
+      <div ref={intersectionRef} className="hidden" />
     </>
   );
 }

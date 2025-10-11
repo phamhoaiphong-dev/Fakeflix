@@ -1,21 +1,22 @@
-import {
-  Link as RouterLink,
-  LinkProps as RouterLinkProps,
-} from "react-router-dom";
-import Link, { LinkProps } from "@mui/material/Link";
+import { Link as RouterLink, LinkProps as RouterLinkProps } from "react-router-dom";
+import { ReactNode } from "react";
+
+interface NetflixNavigationLinkProps extends RouterLinkProps {
+  children: ReactNode;
+  className?: string;
+}
 
 export default function NetflixNavigationLink({
-  sx,
   children,
-  ...others
-}: LinkProps & RouterLinkProps) {
+  className = "",
+  ...props
+}: NetflixNavigationLinkProps) {
   return (
-    <Link
-      {...others}
-      component={RouterLink}
-      sx={{ color: "text.primary", textDecoration: "none", ...sx }}
+    <RouterLink
+      {...props}
+      className={`text-gray-900 no-underline hover:underline ${className}`}
     >
       {children}
-    </Link>
+    </RouterLink>
   );
 }

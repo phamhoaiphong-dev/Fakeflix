@@ -1,167 +1,128 @@
-import * as React from "react";
-import AppBar from "@mui/material/AppBar";
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
-import Toolbar from "@mui/material/Toolbar";
-import IconButton from "@mui/material/IconButton";
-import Typography from "@mui/material/Typography";
-import Menu from "@mui/material/Menu";
-import MenuIcon from "@mui/icons-material/Menu";
-import Avatar from "@mui/material/Avatar";
-import Tooltip from "@mui/material/Tooltip";
-import MenuItem from "@mui/material/MenuItem";
+import { useState } from "react";
 import useOffSetTop from "src/hooks/useOffSetTop";
 import { APP_BAR_HEIGHT } from "src/constant";
 import Logo from "../Logo";
 import SearchBox from "../SearchBox";
 import NetflixNavigationLink from "../NetflixNavigationLink";
+import { Bell } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
-const pages = ["My List", "Movies", "Tv Shows"];
+
+const pages = ["Home", "Tv Shows", "Movies", "New & Popular", "My List"];
 
 const MainHeader = () => {
   const isOffset = useOffSetTop(APP_BAR_HEIGHT);
+  const [navOpen, setNavOpen] = useState(false);
+  const [userOpen, setUserOpen] = useState(false);
+  
+  const { pathname } = useLocation();
+  const isWatchPage = pathname.startsWith("/watch");
 
-  const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(
-    null
-  );
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
-    null
-  );
-
-  const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorElNav(event.currentTarget);
-  };
-  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorElUser(event.currentTarget);
-  };
-
-  const handleCloseNavMenu = () => {
-    setAnchorElNav(null);
-  };
-
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
+  if (isWatchPage) return null;
 
   return (
-    <AppBar
-      sx={{
-        // px: "4%",
-        px: "60px",
-        height: APP_BAR_HEIGHT,
-        backgroundImage: "none",
-        ...(isOffset
-          ? {
-              bgcolor: "primary.main",
-              boxShadow: (theme) => theme.shadows[4],
-            }
-          : { boxShadow: 0, bgcolor: "transparent" }),
-      }}
+    <header
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isOffset ? "bg-black shadow-md" : "bg-gradient-to-b from-black/80 to-transparent"
+        }`}
+      style={{ height: APP_BAR_HEIGHT }}
     >
-      <Toolbar disableGutters>
-        <Logo sx={{ mr: { xs: 2, sm: 4 } }} />
+      <div className="flex items-center justify-between px-6 sm:px-12 h-full">
 
-        <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
-          <IconButton
-            size="large"
-            aria-label="account of current user"
-            aria-controls="menu-appbar"
-            aria-haspopup="true"
-            onClick={handleOpenNavMenu}
-            color="inherit"
+        {/* Logo */}
+        <div className="mr-6 cursor-pointer" onClick={() => window.location.reload()}>
+          <Logo />
+        </div>
+
+        {/* Mobile Menu */}
+        <div className="md:hidden">
+          <button
+            onClick={() => setNavOpen(!navOpen)}
+            className="text-white focus:outline-none"
           >
-            <MenuIcon />
-          </IconButton>
-          <Menu
-            id="menu-appbar"
-            anchorEl={anchorElNav}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "left",
-            }}
-            keepMounted
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "left",
-            }}
-            open={Boolean(anchorElNav)}
-            onClose={handleCloseNavMenu}
-            sx={{
-              display: { xs: "block", md: "none" },
-            }}
-          >
-            {pages.map((page) => (
-              <MenuItem key={page} onClick={handleCloseNavMenu}>
-                <Typography textAlign="center">{page}</Typography>
-              </MenuItem>
-            ))}
-          </Menu>
-        </Box>
-        <Typography
-          variant="h5"
-          noWrap
-          component="a"
-          href=""
-          sx={{
-            mr: 2,
-            display: { xs: "flex", md: "none" },
-            flexGrow: 1,
-            fontWeight: 700,
-            color: "inherit",
-            textDecoration: "none",
-          }}
-        >
-          Netflix
-        </Typography>
-        <Stack
-          direction="row"
-          spacing={3}
-          sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}
-        >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+          {navOpen && (
+            <div className="absolute top-full left-0 w-full bg-black shadow-md md:hidden">
+              {pages.map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setNavOpen(false)}
+                  className="block w-full text-left px-4 py-2 text-white hover:bg-gray-800"
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex space-x-6 flex-1">
           {pages.map((page) => (
             <NetflixNavigationLink
-              to=""
-              variant="subtitle1"
               key={page}
-              onClick={handleCloseNavMenu}
+              to=""
+              className="text-white text-sm hover:text-gray-300"
             >
               {page}
             </NetflixNavigationLink>
           ))}
-        </Stack>
+        </nav>
 
-        <Box sx={{ flexGrow: 0, display: "flex", gap: 2 }}>
+        {/* Right side */}
+        <div className="flex items-center gap-4 relative z-[50]">
           <SearchBox />
-          <Tooltip title="Open settings">
-            <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-              <Avatar alt="user_avatar" src="/avatar.png" variant="rounded" />
-            </IconButton>
-          </Tooltip>
-          <Menu
-            sx={{ mt: "45px" }}
-            id="avatar-menu"
-            anchorEl={anchorElUser}
-            anchorOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-            keepMounted
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-            open={Boolean(anchorElUser)}
-            onClose={handleCloseUserMenu}
-          >
-            {["Account", "Logout"].map((setting) => (
-              <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                <Typography textAlign="center">{setting}</Typography>
-              </MenuItem>
-            ))}
-          </Menu>
-        </Box>
-      </Toolbar>
-    </AppBar>
+
+          {/* Notifications */}
+          <button className="text-white hover:text-gray-300">
+            <Bell size={22} />
+          </button>
+
+          {/* Avatar */}
+          <div className="relative">
+            <button
+              onClick={() => setUserOpen(!userOpen)}
+              className="focus:outline-none"
+            >
+              <img
+                src="/avatar.png"
+                alt="user_avatar"
+                className="w-8 h-8 rounded"
+              />
+            </button>
+            {userOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-black text-white shadow-lg rounded overflow-hidden z-50 text-sm">
+                {["Manage Profiles", "Account", "Help Center", "Sign out"].map(
+                  (item) => (
+                    <button
+                      key={item}
+                      onClick={() => setUserOpen(false)}
+                      className="block w-full text-left px-4 py-2 hover:bg-gray-800"
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
   );
 };
+
 export default MainHeader;

@@ -1,25 +1,7 @@
-import CircularProgress from "@mui/material/CircularProgress";
-
-function MainLoadingScreen() {
+export default function MainLoadingScreen() {
   return (
-    <div
-      style={{
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        position: "fixed",
-        backgroundColor: "#141414",
-        opacity: 0.75,
-        zIndex: 2,
-      }}
-    >
-      <CircularProgress sx={{ color: "white" }} />
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50">
+      <div className="w-12 h-12 border-4 border-t-white border-b-white border-l-transparent border-r-transparent rounded-full animate-spin" />
     </div>
   );
 }
-
-export default MainLoadingScreen;

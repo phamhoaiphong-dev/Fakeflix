@@ -1,26 +1,26 @@
 import { motion } from "framer-motion";
-import Box, { BoxProps } from "@mui/material/Box";
+import type { ComponentProps } from "react";
 import { varWrapBoth } from "./variants/Wrap";
 
-interface MotionContainerProps extends BoxProps {
-  initial?: boolean | string;
+interface MotionContainerProps extends ComponentProps<typeof motion.div> {
   open?: boolean;
 }
 
 export default function MotionContainer({
   open,
   children,
+  className,
   ...other
 }: MotionContainerProps) {
   return (
-    <Box
-      initial={false}
+    <motion.div
       variants={varWrapBoth}
-      component={motion.div}
+      initial={false}
       animate={open ? "animate" : "exit"}
+      className={className}
       {...other}
     >
       {children}
-    </Box>
+    </motion.div>
   );
 }

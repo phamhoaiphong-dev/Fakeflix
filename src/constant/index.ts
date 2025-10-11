@@ -1,17 +1,22 @@
-import { CustomGenre } from "src/types/Genre";
+import { MEDIA_TYPE } from "src/types/Types";
 
 export const API_ENDPOINT_URL = import.meta.env.VITE_APP_API_ENDPOINT_URL;
-export const TMDB_V3_API_KEY = import.meta.env.VITE_APP_TMDB_V3_API_KEY;
 
 export const MAIN_PATH = {
-  root: "",
+  root: "/",
   browse: "browse",
+  tv: "tv",
+  movies: "movies",
+  new: "new",
+  myList: "my-list",
+  languages: "browse-by-languages",
   genreExplore: "genre",
   watch: "watch",
 };
 
 export const ARROW_MAX_WIDTH = 60;
-export const COMMON_TITLES: CustomGenre[] = [
+
+export const COMMON_TITLES = [
   { name: "Popular", apiString: "popular" },
   { name: "Top Rated", apiString: "top_rated" },
   { name: "Now Playing", apiString: "now_playing" },
@@ -23,6 +28,6 @@ export const APP_BAR_HEIGHT = 70;
 
 export const INITIAL_DETAIL_STATE = {
   id: undefined,
-  mediaType: undefined,
+  mediaType: undefined as undefined | MEDIA_TYPE,
   mediaDetail: undefined,
 };

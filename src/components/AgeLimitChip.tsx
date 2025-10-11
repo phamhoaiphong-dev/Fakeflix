@@ -1,17 +1,17 @@
-import Chip, { ChipProps } from "@mui/material/Chip";
-export default function AgeLimitChip({ sx, ...others }: ChipProps) {
+import { HTMLAttributes } from "react";
+
+interface AgeLimitChipProps extends HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export default function AgeLimitChip({ children, className = "", ...props }: AgeLimitChipProps) {
   return (
-    <Chip
-      {...others}
-      sx={{
-        borderRadius: 0,
-        p: 0.5,
-        fontSize: 12,
-        height: "100%",
-        "& > span": { p: 0 },
-        ...sx,
-      }}
-      variant="outlined"
-    />
+    <div
+      className={`border border-gray-400 rounded-none px-1 py-0.5 text-xs inline-block h-full ${className}`}
+      {...props}
+    >
+      {children}
+    </div>
   );
 }

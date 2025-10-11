@@ -1,33 +1,6 @@
-import { styled } from "@mui/material/styles";
-import Box from "@mui/material/Box";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-import { MouseEventHandler, ReactNode } from "react";
+import { ReactNode, MouseEventHandler } from "react";
 
-const ArrowStyle = styled(Box)(({ theme }) => ({
-  top: 0,
-  bottom: 0,
-  position: "absolute",
-  zIndex: 9,
-  height: "100%",
-  opacity: 0.48,
-  display: "flex",
-  cursor: "pointer",
-  alignItems: "center",
-  justifyContent: "center",
-  color: theme.palette.common.white,
-  // background: theme.palette.grey[700],
-  transition: theme.transitions.create("opacity"),
-  "&:hover": {
-    opacity: 0.8,
-    background: theme.palette.grey[900],
-  },
-  [theme.breakpoints.down("sm")]: {
-    display: "none",
-  },
-}));
-
-interface CustomNaviationProps {
+interface CustomNavigationProps {
   isEnd: boolean;
   arrowWidth: number;
   children: ReactNode;
@@ -43,41 +16,57 @@ export default function CustomNavigation({
   onPrevious,
   arrowWidth,
   activeSlideIndex,
-}: CustomNaviationProps) {
+}: CustomNavigationProps) {
+  const arrowStyle = `absolute top-0 bottom-0 z-10 flex items-center justify-center 
+  text-white opacity-0 group-hover:opacity-100 hover:bg-black/50 cursor-pointer hidden sm:flex 
+  transition-opacity duration-300`;
+
   return (
-    <>
+    <div className="relative group">
+      {/* Left Arrow */}
       {activeSlideIndex > 0 && (
-        <ArrowStyle
+        <div
+          className={arrowStyle}
+          style={{ left: 0, width: arrowWidth }}
           onClick={onPrevious}
-          sx={{
-            left: 0,
-            width: { xs: arrowWidth / 2, sm: arrowWidth },
-            borderTopRightRadius: { xs: "4px" },
-            borderBottomRightRadius: { xs: "4px" },
-            // backgroundImage: (theme) =>
-            //   `linear-gradient(to right, ${theme.palette.background.default} 0%, rgba(0,0,0,0) 100%)`,
-          }}
         >
-          <ArrowBackIosNewIcon />
-        </ArrowStyle>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-7 w-7"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </div>
       )}
 
+      {/* Slider content */}
       {children}
+
+      {/* Right Arrow */}
       {!isEnd && (
-        <ArrowStyle
+        <div
+          className={arrowStyle}
+          style={{ right: 0, width: arrowWidth }}
           onClick={onNext}
-          sx={{
-            right: 0,
-            width: { xs: arrowWidth / 2, sm: arrowWidth },
-            borderTopLeftRadius: { xs: "4px" },
-            borderBottomLeftRadius: { xs: "4px" },
-            // backgroundImage: (theme) =>
-            //   `linear-gradient(to left, ${theme.palette.background.default} 0%, rgba(0,0,0,0) 100%)`,
-          }}
         >
-          <ArrowForwardIosIcon />
-        </ArrowStyle>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-7 w-7"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
       )}
-    </>
+
+      {/* Gradient overlays */}
+      <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-black/80 to-transparent pointer-events-none"></div>
+      <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-black/80 to-transparent pointer-events-none"></div>
+    </div>
   );
 }

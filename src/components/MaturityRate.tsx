@@ -1,23 +1,13 @@
-import Box from "@mui/material/Box";
 import { ReactNode } from "react";
 
-export default function MaturityRate({ children }: { children: ReactNode }) {
+interface MaturityRateProps {
+  children: ReactNode;
+}
+
+export default function MaturityRate({ children }: MaturityRateProps) {
   return (
-    <Box
-      sx={{
-        py: 1,
-        pl: 1.5,
-        pr: 3,
-        fontSize: 22,
-        display: "flex",
-        alignItem: "center",
-        color: "text.primary",
-        border: "3px #dcdcdc",
-        borderLeftStyle: "solid",
-        bgcolor: "#33333399",
-      }}
-    >
+    <div className="flex items-center py-1 pl-3 pr-6 text-[22px] text-white border-l-[3px] border-gray-300 bg-gray-800/60">
       {children}
-    </Box>
+    </div>
   );
 }

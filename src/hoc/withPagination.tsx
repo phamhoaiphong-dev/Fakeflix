@@ -3,24 +3,29 @@ import MainLoadingScreen from "src/components/MainLoadingScreen";
 import { useAppDispatch, useAppSelector } from "src/hooks/redux";
 import {
   initiateItem,
-  useLazyGetVideosByMediaTypeAndGenreIdQuery,
+  useLazyGetVideosByMediaTypeAndGenreSlugQuery,
   useLazyGetVideosByMediaTypeAndCustomGenreQuery,
 } from "src/store/slices/discover";
-import { MEDIA_TYPE } from "src/types/Common";
-import { CustomGenre, Genre } from "src/types/Genre";
+import { MEDIA_TYPE } from "src/types/Types";
+import { KKPhimCategory } from "src/types/KKPhim";
+
+interface WithPaginationProps {
+  category?: KKPhimCategory; 
+}
 
 export default function withPagination(
   Component: ElementType,
   mediaType: MEDIA_TYPE,
-  genre: Genre | CustomGenre
+  category?: KKPhimCategory
 ) {
   return function WithPagination() {
     const dispatch = useAppDispatch();
-    const itemKey = genre.id ?? (genre as CustomGenre).apiString;
+    const itemKey = category?._id ?? mediaType; 
     const mediaState = useAppSelector((state) => state.discover[mediaType]);
     const pageState = mediaState ? mediaState[itemKey] : undefined;
-    const [getVideosByMediaTypeAndGenreId] =
-      useLazyGetVideosByMediaTypeAndGenreIdQuery();
+
+    const [getVideosByMediaTypeAndGenreSlug] =
+      useLazyGetVideosByMediaTypeAndGenreSlugQuery();
     const [getVideosByMediaTypeAndCustomGenre] =
       useLazyGetVideosByMediaTypeAndCustomGenreQuery();
 
@@ -36,28 +41,29 @@ export default function withPagination(
       }
     }, [pageState]);
 
-    const handleNext = useCallback((page: number) => {
-      if (genre.id) {
-        getVideosByMediaTypeAndGenreId({
-          mediaType,
-          genreId: genre.id,
-          page,
-        });
-      } else {
-        getVideosByMediaTypeAndCustomGenre({
-          mediaType,
-          apiString: (genre as CustomGenre).apiString,
-          page,
-        });
-      }
-      // dispatch(setNextPage({ mediaType, itemKey }));
-    }, []);
+    const handleNext = useCallback(
+      (page: number) => {
+        if (category) {
+          getVideosByMediaTypeAndGenreSlug({
+            mediaType,
+            genreSlug: category.slug,
+            page,
+          });
+        } else {
+          getVideosByMediaTypeAndCustomGenre({
+            mediaType,
+            apiString: mediaType,
+            page,
+          });
+        }
+      },
+      [category, mediaType]
+    );
 
     if (pageState) {
-      return (
-        <Component genre={genre} data={pageState} handleNext={handleNext} />
-      );
+      return <Component category={category} data={pageState} handleNext={handleNext} />;
     }
+
     return <MainLoadingScreen />;
   };
 }

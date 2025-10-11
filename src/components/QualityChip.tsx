@@ -1,17 +1,25 @@
-import Chip, { ChipProps } from "@mui/material/Chip";
-export default function QualityChip({ sx, ...others }: ChipProps) {
+import { ReactNode, HTMLAttributes } from "react";
+
+interface QualityChipProps extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
+  className?: string;
+}
+
+export default function QualityChip({ children, className = "", ...props }: QualityChipProps) {
   return (
-    <Chip
-      variant="outlined"
-      {...others}
-      sx={{
-        borderRadius: "4px",
-        p: 0.5,
-        fontSize: 12,
-        height: "100%",
-        "& > span": { p: 0 },
-        ...sx,
-      }}
-    />
+    <div
+      {...props}
+      className={`
+        border border-gray-400
+        rounded-sm
+        px-1.5 py-0.5
+        text-xs
+        h-full
+        inline-flex items-center
+        ${className}
+      `}
+    >
+      {children}
+    </div>
   );
 }

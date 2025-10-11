@@ -1,95 +1,40 @@
-import Stack from "@mui/material/Stack";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import Typography from "@mui/material/Typography";
-import AddIcon from "@mui/icons-material/Add";
-import { Movie } from "src/types/Movie";
-import NetflixIconButton from "./NetflixIconButton";
-import MaxLineTypography from "./MaxLineTypography";
-import { formatMinuteToReadable, getRandomNumber } from "src/utils/common";
-import AgeLimitChip from "./AgeLimitChip";
-import { useGetConfigurationQuery } from "src/store/slices/configuration";
+import { KKPhimMovie } from "src/types/KKPhim";
 
-interface SimilarVideoCardProps {
-  video: Movie;
+interface SimilarVideoCardProps { 
+  video: KKPhimMovie;
 }
 
 export default function SimilarVideoCard({ video }: SimilarVideoCardProps) {
-  const { data: configuration } = useGetConfigurationQuery(undefined);
-
   return (
-    <Card>
-      <div
-        style={{
-          width: "100%",
-          position: "relative",
-          paddingTop: "calc(9 / 16 * 100%)",
-        }}
-      >
+    <div
+      className="flex-shrink-0 w-[28vw] sm:w-[18vw] md:w-[14vw] lg:w-[12vw] 
+                 cursor-pointer transition-transform duration-300 
+                 hover:scale-110 hover:z-10"
+    >
+      {/* Poster */}
+      <div className="relative aspect-[2/3] rounded-md overflow-hidden bg-gray-800">
         <img
-          src={`${configuration?.images.base_url}w780${video.backdrop_path}`}
-          style={{
-            top: 0,
-            height: "100%",
-            position: "absolute",
+          src={video.poster_url || video.thumb_url}
+          alt={video.name}
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src =
+              "https://via.placeholder.com/300x450/374151/ffffff?text=No+Image";
           }}
         />
-        <div
-          style={{
-            top: 10,
-            right: 15,
-            position: "absolute",
-          }}
-        >
-          <Typography variant="subtitle2">{`${formatMinuteToReadable(
-            getRandomNumber(180)
-          )}`}</Typography>
-        </div>
-        <div
-          style={{
-            left: 0,
-            right: 0,
-            bottom: 0,
-            paddingLeft: "16px",
-            paddingRight: "16px",
-            paddingBottom: "4px",
-            position: "absolute",
-          }}
-        >
-          <MaxLineTypography
-            maxLine={1}
-            sx={{ width: "80%", fontWeight: 700 }}
-            variant="subtitle1"
-          >
-            {video.title}
-          </MaxLineTypography>
-        </div>
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
       </div>
-      <CardContent>
-        <Stack spacing={1}>
-          <Stack direction="row" alignItems="center">
-            <div>
-              <Typography
-                variant="subtitle2"
-                sx={{ color: "success.main" }}
-              >{`${getRandomNumber(100)}% Match`}</Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <AgeLimitChip label={`${getRandomNumber(20)}+`} />
-                <Typography variant="body2">
-                  {video.release_date.substring(0, 4)}
-                </Typography>
-              </Stack>
-            </div>
-            <div style={{ flexGrow: 1 }} />
-            <NetflixIconButton>
-              <AddIcon />
-            </NetflixIconButton>
-          </Stack>
-          <MaxLineTypography maxLine={4} variant="subtitle2">
-            {video.overview}
-          </MaxLineTypography>
-        </Stack>
-      </CardContent>
-    </Card>
+
+      {/* Info */}
+      <div className="mt-2">
+        <p className="text-white text-sm font-medium truncate">
+          {video.name}
+        </p>
+        {video.year && (
+          <p className="text-gray-400 text-xs">{video.year}</p>
+        )}
+      </div>
+    </div>
   );
 }
