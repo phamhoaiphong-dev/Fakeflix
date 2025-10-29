@@ -2,58 +2,118 @@
 import { useEffect, useState } from "react";
 import HeroSection from "src/components/HeroSection";
 import SliderRowForGenre from "src/components/SliderRowForGenre";
-import { fetchTrending, fetchTopRated, fetchTVShows, fetchAnime, fetchByCountry } from "src/services/netflixService";
+import {
+  fetchTrending,
+  fetchTopRatedMovies,
+  fetchTrendingTVShows,
+  fetchLatestAnime,
+  fetchVietsub,
+  fetchThuyetMinh,
+  fetchLongTieng,
+  fetchKoreanDramas,
+  fetchUSActionMovies,
+  fetchAsianHorror,
+  fetchByCountry,
+  fetchByGenre,
+} from "src/services/netflixService";
+
+import type { KKPhimMovie } from "src/types/KKPhim";
+
+interface MovieRow {
+  title: string;
+  movies: KKPhimMovie[];
+}
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState<
-    { title: string; movies: any[] }[]
-  >([]);
+  const [rows, setRows] = useState<MovieRow[]>([]);
+  const [heroMovie, setHeroMovie] = useState<KKPhimMovie | null>(null);
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const [trending, topRated, tvShows, anime, korean, usa] = await Promise.all([
-        fetchTrending(),
-        fetchTopRated(),
-        fetchTVShows(),
-        fetchAnime(),
-        fetchByCountry("han-quoc"),
-        fetchByCountry("au-my"),
-      ]);
 
+      try {
+        const [
+          trending,
+          topMovies,
+          tvShows,
+          anime,
+          vietsub,
+          thuyetMinh,
+          longTieng,
+          koreanDramas,
+          usAction,
+          asianHorror,
+          thaiMovies,
+          comedyMovies,
+        ] = await Promise.all([
+          fetchTrending(1),
+          fetchTopRatedMovies(1),
+          fetchTrendingTVShows(1),
+          fetchLatestAnime(1),
+          fetchVietsub(1),
+          fetchThuyetMinh(1),
+          fetchLongTieng(1),
+          fetchKoreanDramas(1),
+          fetchUSActionMovies(1),
+          fetchAsianHorror(1),
+          fetchByCountry("thai-lan", 1),
+          fetchByGenre("hai-huoc", 1),
+        ]);
 
-      setRows([
-        { title: "Trending Now", movies: trending || [] },
-        { title: "Made in Korea", movies: korean || [] },
-        { title: "Made in GloBal", movies: usa || [] },
-        { title: "Top Rated", movies: topRated || [] },
-        { title: "TV Shows", movies: tvShows || [] },
-        { title: "Anime", movies: anime || [] },
-      ]);
+        // Dễ dàng thêm/bớt/sắp xếp rows
+        const movieRows: MovieRow[] = [
+          { title: "Phim Mới Cập Nhật", movies: trending },
+          { title: "Phim Lẻ Đánh Giá Cao", movies: topMovies },
+          { title: "Phim Bộ Đang Hot", movies: tvShows },
+          { title: "Anime Mới Nhất", movies: anime },
+          { title: "Phim Vietsub", movies: vietsub },
+          { title: "Phim Thuyết Minh", movies: thuyetMinh },
+          { title: "Phim Lồng Tiếng", movies: longTieng },
+          { title: "Phim Hàn Quốc", movies: koreanDramas },
+          { title: "Phim Hành Động Mỹ", movies: usAction },
+          { title: "Phim Kinh Dị Châu Á", movies: asianHorror },
+          { title: "Phim Thái Lan", movies: thaiMovies },
+          { title: "Phim Hài Hước", movies: comedyMovies },
+        ];
 
-      setLoading(false);
+        // Lọc bỏ rows không có phim
+        setRows(movieRows.filter(row => row.movies.length > 0));
+
+        // Chọn phim ngẫu nhiên từ trending làm hero
+        if (trending.length > 0) {
+          const randomIndex = Math.floor(Math.random() * Math.min(5, trending.length));
+          setHeroMovie(trending[randomIndex]);
+        }
+
+      } catch (error) {
+        console.error("Error loading homepage data:", error);
+      } finally {
+        setLoading(false);
+      }
     }
+
     loadData();
   }, []);
-
 
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+          <div className="text-white text-xl font-medium">Đang tải phim...</div>
+        </div>
       </div>
     );
   }
 
-  const trendingRow = rows.find((r) => r.title === "Trending Now");
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Hero Section: random movie trong trending */}
-      {trendingRow && trendingRow.movies.length > 0 && (
-        <div className="netflix-hero">
-          <HeroSection movie={trendingRow.movies[Math.floor(Math.random() * trendingRow.movies.length)]} />
+      {heroMovie && (
+        <div className="netflix-hero relative">
+          <HeroSection movie={heroMovie} />
         </div>
       )}
 

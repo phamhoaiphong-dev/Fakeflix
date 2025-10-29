@@ -14,7 +14,7 @@ export default function SimilarVideoCard({ video }: SimilarVideoCardProps) {
       {/* Poster */}
       <div className="relative aspect-[2/3] rounded-md overflow-hidden bg-gray-800">
         <img
-          src={video.poster_url || video.thumb_url}
+          src={video.backdrop_url || video.poster_url || video.thumb_url}
           alt={video.name}
           className="absolute inset-0 w-full h-full object-cover"
           onError={(e) => {

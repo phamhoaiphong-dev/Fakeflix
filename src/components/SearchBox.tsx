@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Search, X } from "lucide-react";
 import { searchMovies } from "src/services/netflixService";
 import { useNavigate } from "react-router-dom";
+import type { SearchParams } from "src/types/KKPhim";
 
 export default function SearchBox() {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,7 +38,13 @@ export default function SearchBox() {
       if (query.trim().length > 1) {
         setIsLoading(true);
         try {
-          const data = await searchMovies(query);
+          // Tạo SearchParams object thay vì pass string
+          const searchParams: SearchParams = {
+            keyword: query,
+            page: 1,
+            limit: 20,
+          };
+          const data = await searchMovies(searchParams);
           setResults(data);
         } catch (error) {
           console.error("Search error:", error);

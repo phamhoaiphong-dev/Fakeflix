@@ -16,7 +16,6 @@ import AgeLimitChip from "./AgeLimitChip";
 import QualityChip from "./QualityChip";
 import GenreBreadcrumbs from "./GenreBreadcrumbs";
 import { MAIN_PATH } from "src/constant";
-import { MEDIA_TYPE } from "src/types/Types";
 
 interface VideoCardModalProps {
   video: KKPhimMovie;
@@ -43,7 +42,7 @@ export default function VideoCardModal({
       {/* Thumbnail */}
       <div className="relative w-full aspect-video bg-gray-800">
         <img
-          src={video.thumb_url || video.poster_url}
+          src={video.backdrop_url || video.thumb_url || video.poster_url}
           alt={video.name}
           className="w-full h-full object-cover"
           onError={(e) => {
@@ -91,7 +90,6 @@ export default function VideoCardModal({
             className="p-2"
             onClick={() =>
               setDetailType({
-                mediaType: MEDIA_TYPE.PhimLe,
                 id: video._id,
               })
             }

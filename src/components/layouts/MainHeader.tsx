@@ -5,16 +5,18 @@ import Logo from "../Logo";
 import SearchBox from "../SearchBox";
 import NetflixNavigationLink from "../NetflixNavigationLink";
 import { Bell } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import DropdownCountry from "../DropdownCountry";
+import DropdownGenre from "../DropdownGenre";
 
 
-const pages = ["Home", "Tv Shows", "Movies", "New & Popular", "My List"];
+const pages = ["Phim Lẻ", "Phim Bộ", "Thể Loại", "Quốc Gia", "Danh Sách Yêu Thích"];
 
 const MainHeader = () => {
   const isOffset = useOffSetTop(APP_BAR_HEIGHT);
   const [navOpen, setNavOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
-  
+  const navigate = useNavigate();
   const { pathname } = useLocation();
   const isWatchPage = pathname.startsWith("/watch");
 
@@ -29,9 +31,19 @@ const MainHeader = () => {
       <div className="flex items-center justify-between px-6 sm:px-12 h-full">
 
         {/* Logo */}
-        <div className="mr-6 cursor-pointer" onClick={() => window.location.reload()}>
+        <div
+          className="mr-6 cursor-pointer"
+          onClick={() => {
+            if (location.pathname === "/browse") {
+              window.location.reload(); // Reload trang hiện tại
+            } else {
+              navigate("/browse");
+            }
+          }}
+        >
           <Logo />
         </div>
+
 
         {/* Mobile Menu */}
         <div className="md:hidden">
@@ -70,17 +82,33 @@ const MainHeader = () => {
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex space-x-6 flex-1">
-          {pages.map((page) => (
-            <NetflixNavigationLink
-              key={page}
-              to=""
-              className="text-white text-sm hover:text-gray-300"
-            >
-              {page}
-            </NetflixNavigationLink>
-          ))}
+        <nav className="hidden md:flex items-center space-x-6 flex-1">
+          <NetflixNavigationLink
+            to="/phim-le"
+            className="text-white text-sm hover:text-gray-300"
+          >
+            Phim Lẻ
+          </NetflixNavigationLink>
+
+          <NetflixNavigationLink
+            to="/phim-bo"
+            className="text-white text-sm hover:text-gray-300"
+          >
+            Phim Bộ
+          </NetflixNavigationLink>
+
+          <DropdownGenre />
+
+          <DropdownCountry />
+
+          <NetflixNavigationLink
+            to="/danh-sach-yeu-thich"
+            className="text-white text-sm hover:text-gray-300"
+          >
+            Danh Sách Yêu Thích
+          </NetflixNavigationLink>
         </nav>
+
 
         {/* Right side */}
         <div className="flex items-center gap-4 relative z-[50]">

@@ -70,6 +70,7 @@ export interface KKPhimDetailResponse {
     name: string;
     slug: string;
     origin_name: string;
+    backdrop_url: string;
     poster_url: string;
     thumb_url: string;
     content: string;

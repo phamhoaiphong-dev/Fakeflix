@@ -3,28 +3,82 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, X, ChevronDown } from "lucide-react";
 import axios from "axios";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 export default function WatchPage() {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
   const { data, isLoading, error } = useMovieDetail(slug);
   const navigate = useNavigate();
 
   const [selectedServer, setSelectedServer] = useState(0);
-  const [selectedEpisode, setSelectedEpisode] = useState(0);
+  const [selectedEpisode, setSelectedEpisode] = useState<number | null>(null);
   const [showControls, setShowControls] = useState(true);
   const [showEpisodes, setShowEpisodes] = useState(false);
   const [relatedSeasons, setRelatedSeasons] = useState<any[]>([]);
+  const [isEpisodeReady, setIsEpisodeReady] = useState(false);
 
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const videoRef = useRef<HTMLIFrameElement | null>(null);
 
   const movie = data?.movie;
   const episodes = data?.episodes;
-  const currentEpisode = episodes?.[selectedServer]?.server_data?.[selectedEpisode];
+
+  useEffect(() => {
+    if (!episodes || episodes.length === 0) {
+      setIsEpisodeReady(false);
+      return;
+    }
+
+    const epSlug = searchParams.get("ep");
+    
+    if (epSlug) {
+      // Tìm episode theo slug
+      let found = false;
+      for (let serverIdx = 0; serverIdx < episodes.length; serverIdx++) {
+        const epIdx = episodes[serverIdx].server_data.findIndex(
+          (ep: any) => {
+            // So sánh cả slug đầy đủ và slug rút gọn
+            const epSlugClean = ep.slug?.split('/').pop() || ep.slug;
+            const paramSlugClean = epSlug.split('/').pop() || epSlug;
+            return ep.slug === epSlug || epSlugClean === paramSlugClean;
+          }
+        );
+        
+        if (epIdx !== -1) {
+          setSelectedServer(serverIdx);
+          setSelectedEpisode(epIdx);
+          setIsEpisodeReady(true);
+          found = true;
+          console.log('[WatchPage] Found episode:', { serverIdx, epIdx, epSlug });
+          break;
+        }
+      }
+      
+      if (!found) {
+        console.warn('[WatchPage] Episode not found, defaulting to first episode');
+        setSelectedServer(0);
+        setSelectedEpisode(0);
+        setIsEpisodeReady(true);
+      }
+    } else {
+      // Nếu không có ep parameter, mặc định là episode đầu tiên
+      setSelectedServer(0);
+      setSelectedEpisode(0);
+      setIsEpisodeReady(true);
+      console.log('[WatchPage] No ep param, using first episode');
+    }
+  }, [episodes, searchParams]);
+
+  const currentEpisode = 
+    selectedEpisode !== null && 
+    episodes?.[selectedServer]?.server_data?.[selectedEpisode] 
+      ? episodes[selectedServer].server_data[selectedEpisode] 
+      : null;
+
   const { data: similarMovies } = useRecommendMovies(movie?.category?.[0]?._id);
 
-  // Fetch related seasons/parts based on TMDB ID
+  // Fetch related seasons/parts based on 
   useEffect(() => {
     const fetchRelatedSeasons = async () => {
       if (!movie?.tmdb?.id) return;
@@ -38,7 +92,6 @@ export default function WatchPage() {
         });
 
         if (response.data?.data?.items) {
-          // Filter movies with same TMDB ID and sort by season
           const seasons = response.data.data.items
             .filter((item: any) => item.tmdb?.id === movie.tmdb?.id)
             .sort((a: any, b: any) => {
@@ -56,10 +109,6 @@ export default function WatchPage() {
 
     fetchRelatedSeasons();
   }, [movie]);
-
-  // Giả sử movie có trường seasons hoặc related_seasons
-  const seasons = movie?.seasons || movie?.related_seasons || [];
-  const currentSeason = movie?.current_season || 1;
 
   // Auto-hide controls after 3 seconds
   useEffect(() => {
@@ -79,24 +128,48 @@ export default function WatchPage() {
 
   const goToNextEpisode = () => {
     const totalEpisodes = episodes?.[selectedServer]?.server_data?.length || 0;
-    if (selectedEpisode < totalEpisodes - 1) {
+    if (selectedEpisode !== null && selectedEpisode < totalEpisodes - 1) {
       setSelectedEpisode(selectedEpisode + 1);
     }
   };
 
-  if (isLoading)
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-black">
-        <div className="relative">
-          <div className="animate-spin rounded-full h-20 w-20 border-4 border-gray-800 border-t-red-600"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-12 h-12 bg-red-600 rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
+  if (isLoading || !isEpisodeReady) {
+  return (
+    <div className="w-full h-screen flex items-center justify-center bg-black">
+      <div className="flex flex-col items-center">
+        {/* Netflix Logo */}
+        <motion.div
+          initial={{ opacity: 0.3, scale: 0.8 }}
+          animate={{
+            opacity: [0.3, 1, 0.3],
+            scale: [0.8, 1, 0.8],
+          }}
+          transition={{
+            duration: 1.8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="text-red-600 text-7xl font-extrabold tracking-tighter"
+        >
+          N
+        </motion.div>
 
-  if (error)
+        {/* Subtle fade text */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0] }}
+          transition={{ duration: 2.5, repeat: Infinity }}
+          className="mt-4 text-gray-400 text-sm tracking-widest"
+        >
+          NETFLIX
+        </motion.p>
+      </div>
+    </div>
+  );
+}
+
+
+  if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-black text-white text-center p-4">
         <div className="max-w-md">
@@ -112,15 +185,25 @@ export default function WatchPage() {
         </div>
       </div>
     );
+  }
 
   if (!movie) return null;
+
+  // ⭐ FIX 4: Kiểm tra currentEpisode trước khi render iframe
+  console.log('[WatchPage] Render state:', {
+    currentEpisode,
+    selectedServer,
+    selectedEpisode,
+    hasLinkEmbed: !!currentEpisode?.link_embed
+  });
 
   return (
     <div className="relative w-full h-screen bg-black text-white overflow-hidden">
       {currentEpisode?.link_embed ? (
         <div className="relative w-full h-full">
-          {/* Video iframe - full screen, no pointer-events blocking */}
+          {/* Video iframe */}
           <iframe
+            key={`${selectedServer}-${selectedEpisode}`}
             ref={videoRef}
             src={currentEpisode.link_embed}
             className="absolute inset-0 w-full h-full"
@@ -130,7 +213,7 @@ export default function WatchPage() {
             title={`${movie.name} - ${currentEpisode.name}`}
           />
 
-          {/* Top bar - không che player */}
+          {/* Top bar */}
           <AnimatePresence>
             {showControls && (
               <motion.div
@@ -181,7 +264,7 @@ export default function WatchPage() {
                   animate={{ x: 0 }}
                   exit={{ x: "100%" }}
                   transition={{ type: "tween", duration: 0.3 }}
-                  className="absolute top-0 right-0 bottom-0 w-full sm:w-[450px] bg-[#141414] z-50 overflow-y-auto shadow-2xl scrollbar-hide "
+                  className="absolute top-0 right-0 bottom-0 w-full sm:w-[450px] bg-[#141414] z-50 overflow-y-auto shadow-2xl scrollbar-hide"
                 >
                   <div className="sticky top-0 bg-[#141414] border-b border-gray-800 z-10">
                     <div className="p-6 flex justify-between items-center">
@@ -282,12 +365,11 @@ export default function WatchPage() {
                           setSelectedEpisode(idx);
                           setShowEpisodes(false);
                         }}
-                        className={`w-full text-left p-4 rounded-lg transition group relative overflow-hidden  ${selectedEpisode === idx
+                        className={`w-full text-left p-4 rounded-lg transition group relative overflow-hidden ${selectedEpisode === idx
                           ? "bg-red-600/20 border-2 border-red-600"
                           : "bg-white/5 hover:bg-white/10 border-2 border-transparent"
                           }`}
                       >
-                        {/* Episode number badge */}
                         <div className="flex items-start gap-4">
                           <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center text-2xl font-bold transition ${selectedEpisode === idx
                             ? 'bg-red-600 text-white'
@@ -310,14 +392,13 @@ export default function WatchPage() {
                           </div>
                         </div>
 
-                        {/* Hover effect */}
                         <div className={`absolute inset-0 bg-gradient-to-r from-transparent to-red-600/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`} />
                       </motion.button>
                     ))}
                   </div>
 
-                  {/* Next episode suggestion at bottom */}
-                  {selectedEpisode < (episodes?.[selectedServer]?.server_data?.length || 0) - 1 && (
+                  {/* Next episode suggestion */}
+                  {selectedEpisode !== null && selectedEpisode < (episodes?.[selectedServer]?.server_data?.length || 0) - 1 && (
                     <div className="sticky bottom-0 bg-gradient-to-t from-[#141414] via-[#141414] to-transparent p-6 pt-8">
                       <button
                         onClick={() => {
@@ -341,6 +422,9 @@ export default function WatchPage() {
           <div className="text-center">
             <div className="text-6xl mb-4">🎬</div>
             <p className="text-xl text-gray-400">Không có video khả dụng</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Debug: Server {selectedServer}, Episode {selectedEpisode}
+            </p>
           </div>
         </div>
       )}

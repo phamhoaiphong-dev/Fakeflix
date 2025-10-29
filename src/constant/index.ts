@@ -1,3 +1,4 @@
+// src/constant/index.ts
 import { MEDIA_TYPE } from "src/types/Types";
 
 export const API_ENDPOINT_URL = import.meta.env.VITE_APP_API_ENDPOINT_URL;
@@ -10,8 +11,9 @@ export const MAIN_PATH = {
   new: "new",
   myList: "my-list",
   languages: "browse-by-languages",
-  genreExplore: "genre",
+  genre: "the-loai",
   watch: "watch",
+  country: "quoc-gia",
 };
 
 export const ARROW_MAX_WIDTH = 60;
@@ -31,3 +33,16 @@ export const INITIAL_DETAIL_STATE = {
   mediaType: undefined as undefined | MEDIA_TYPE,
   mediaDetail: undefined,
 };
+
+export const countries = [
+  { slug: 'au-my', name: 'Âu Mỹ' },
+  { slug: 'han-quoc', name: 'Hàn Quốc' },
+  { slug: 'nhat-ban', name: 'Nhật Bản' },
+  { slug: 'trung-quoc', name: 'Trung Quốc' },
+  { slug: 'phap', name: 'Pháp' },
+  { slug: 'an-do', name: 'Ấn Độ' },
+  { slug: 'hong-kong', name: 'Hồng Kông' },
+  { slug: 'thai-lan', name: 'Thái Lan' },
+  { slug: 'dai-loan', name: 'Đài Loan' },
+];
+
