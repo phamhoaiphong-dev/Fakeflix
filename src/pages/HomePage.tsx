@@ -112,12 +112,9 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {heroMovie && (
-        <div className="netflix-hero relative">
-          <HeroSection movie={heroMovie} />
-        </div>
+        <HeroSection movie={heroMovie} />
       )}
 
-      {/* Render rows theo config */}
       <div className="netflix-container space-y-8 py-6">
         {rows.map((row) => (
           <SliderRowForGenre key={row.title} title={row.title} movies={row.movies} />
@@ -125,4 +122,5 @@ export default function HomePage() {
       </div>
     </div>
   );
+
 }

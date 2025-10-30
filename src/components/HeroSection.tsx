@@ -38,7 +38,11 @@ export default function HeroSection({ movie }: HeroSectionProps) {
           <h1 className="text-4xl md:text-6xl font-bold drop-shadow-xl">
             {movie.name}
           </h1>
-
+          {movie.origin_name && movie.origin_name !== movie.name && (
+            <p className="text-lg md:text-2xl text-gray-300 mt-1 italic drop-shadow-md">
+              {movie.origin_name}
+            </p>
+          )}
           <p className="text-base md:text-lg text-gray-200 drop-shadow-md line-clamp-3">
             {isLoading ? "Đang tải mô tả..." : content}
           </p>

@@ -6,11 +6,9 @@ export const API_ENDPOINT_URL = import.meta.env.VITE_APP_API_ENDPOINT_URL;
 export const MAIN_PATH = {
   root: "/",
   browse: "browse",
-  tv: "tv",
-  movies: "movies",
-  new: "new",
+  series: "phim-bo",
+  featurefilm: "phim-le",
   myList: "my-list",
-  languages: "browse-by-languages",
   genre: "the-loai",
   watch: "watch",
   country: "quoc-gia",

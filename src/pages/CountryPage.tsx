@@ -146,7 +146,7 @@ export default function CountryMoviesPage() {
         {/* Header section */}
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">
-           Danh Sách Phim Theo Quốc Gia {country?.name.toUpperCase()}
+            Danh Sách Phim Theo Quốc Gia {country?.name.toUpperCase()}
           </h1>
           <p className="text-gray-400 text-sm">
             Trang {page} / {totalPages}
@@ -301,7 +301,7 @@ export default function CountryMoviesPage() {
 
                 <div className="flex items-center gap-2">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
+                    let pageNum: number = 1;
                     if (totalPages <= 5) {
                       pageNum = i + 1;
                     } else if (page <= 3) {

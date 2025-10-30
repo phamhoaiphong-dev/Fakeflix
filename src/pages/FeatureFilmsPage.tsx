@@ -1,35 +1,35 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, ChevronDown, ChevronLeft, ChevronRight, Plus, ThumbsUp } from "lucide-react";
 import { getOptimizedImageUrl } from "src/utils/imageHelper";
-import MovieDetailModal from "src/components/watch/MovieDetailOverlay";
+import { handlePlayClick } from "src/utils/playHelper";
 
-const handlePlayClick = ({ slug }: { slug: string }) => {
-    console.log("Play movie:", slug);
-};
+import MovieDetailModal from "src/components/watch/MovieDetailOverlay";
 
 interface Movie {
     _id: string;
     name: string;
     thumb_url: string;
+    poster_url?: string;
     slug: string;
     year?: string;
     quality?: string;
     episode_current?: string;
-    episode_total?: string;
     origin_name?: string;
+    time?: string;
+    lang?: string;
+    tmdb?: {
+        vote_average?: number;
+    };
 }
 
-export default function GenreMoviesPage() {
-    const { slug } = useParams<{ slug: string }>();
+export default function FeatureFilmsPage() {
     const [movies, setMovies] = useState<Movie[]>([]);
     const [page, setPage] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(1);
     const [selectedMovie, setSelectedMovie] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
-    const [genreName, setGenreName] = useState<string>("");
 
     // Hover states
     const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -39,46 +39,47 @@ export default function GenreMoviesPage() {
 
     const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
 
+    // Fetch phim lẻ theo trang
     useEffect(() => {
-        const fetchMovies = async () => {
+        const fetchFeatureFilms = async () => {
             try {
-                if (!slug) return;
                 setLoading(true);
                 const res = await fetch(
-                    `https://phimapi.com/v1/api/the-loai/${slug}?page=${page}&limit=18&sort_field=modified.time&sort_type=desc`
+                    `https://phimapi.com/v1/api/danh-sach/phim-le?page=${page}&limit=18`
                 );
-
                 const json = await res.json();
 
-                if (json.status === true && (json.data?.items || json.data?.movieList)) {
-                    setMovies(json.data.items || json.data.movieList || []);
+                if (json.status === true && json.data?.items) {
+                    const items = json.data.items.map((item: any) => ({
+                        ...item,
+                        _id: item._id,
+                        name: item.name,
+                        thumb_url: item.thumb_url || item.poster_url,
+                        slug: item.slug,
+                        year: item.year,
+                        quality: item.quality,
+                        episode_current: item.episode_current,
+                        origin_name: item.origin_name,
+                        time: item.time,
+                        lang: item.lang,
+                        tmdb: item.tmdb || {},
+                    }));
+                    setMovies(items);
                     setTotalPages(json.data.params?.pagination?.totalPages || 1);
-
-                    if (json.data.breadCrumb && json.data.breadCrumb.length > 1) {
-                        const genreBreadcrumb = json.data.breadCrumb[json.data.breadCrumb.length - 2];
-                        if (genreBreadcrumb?.name) {
-                            setGenreName(genreBreadcrumb.name);
-                        }
-                    } else if (json.data.seoOnPage?.titleHead) {
-                        setGenreName(json.data.seoOnPage.titleHead.split(' | ')[0].replace(/^Phim\s+/i, ''));
-                    } else {
-                        setGenreName(typeof name === 'string' ? name : slug);
-                    }
                 } else {
-                    console.error("Unexpected response:", json);
-                    setMovies(json.data?.items || json.data?.movieList || []);
+                    console.error("API lỗi hoặc không có dữ liệu:", json);
                 }
             } catch (err) {
-                console.error("Lỗi tải phim:", err);
+                console.error("Lỗi tải phim lẻ:", err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchMovies();
-    }, [slug, page]);
+        fetchFeatureFilms();
+    }, [page]);
 
-    // Fetch movie detail when hovering
+    // Fetch chi tiết phim khi hover
     useEffect(() => {
         if (hoveredId && !movieDetails[hoveredId]) {
             const movie = movies.find(m => m._id === hoveredId);
@@ -137,10 +138,10 @@ export default function GenreMoviesPage() {
                 setSelectedMovie(data);
                 setIsModalOpen(true);
             } else {
-                alert("Không thể tải chi tiết phim này.");
+                alert("Không thể tải chi tiết phim.");
             }
         } catch (err) {
-            console.error("Lỗi tải chi tiết phim:", err);
+            console.error("Lỗi tải chi tiết:", err);
         }
     };
 
@@ -154,15 +155,14 @@ export default function GenreMoviesPage() {
 
     return (
         <div className="min-h-screen bg-black text-white pt-[70px]">
-            {/* Container with max width */}
             <div className="max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header section */}
+                {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-2xl md:text-3xl font-bold mb-2">
-                        Danh Sách Phim Theo Thể Loại {genreName}
+                        Phim Lẻ Nổi Bật
                     </h1>
                     <p className="text-gray-400 text-sm">
-                        Trang {page} / {totalPages}
+                        Cập nhật mới nhất • Trang {page} / {totalPages}
                     </p>
                 </div>
 
@@ -170,12 +170,12 @@ export default function GenreMoviesPage() {
                     <div className="flex items-center justify-center py-20">
                         <div className="text-center">
                             <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                            <p className="text-gray-400">Đang tải phim...</p>
+                            <p className="text-gray-400">Đang tải phim nổi bật...</p>
                         </div>
                     </div>
                 ) : (
                     <>
-                        {/* Movies Grid */}
+                        {/* Grid phim */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 md:gap-4 lg:gap-5">
                             {movies.map((movie) => {
                                 const isHovered = hoveredId === movie._id;
@@ -203,36 +203,40 @@ export default function GenreMoviesPage() {
                                                     loading="lazy"
                                                 />
 
-                                                {/* Quality badge */}
+                                                {/* Quality */}
                                                 {movie.quality && (
                                                     <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 rounded text-xs font-semibold">
                                                         {movie.quality}
                                                     </div>
                                                 )}
+
+                                                {/* TMDB rating */}
+                                                {movie.tmdb?.vote_average != null && movie.tmdb.vote_average > 0 && (
+                                                    <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 px-2 py-1 rounded text-xs">
+                                                        <span>⭐</span>
+                                                        <span>{movie.tmdb.vote_average.toFixed(1)}</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </motion.div>
 
-                                        {/* Hover Preview Card */}
+                                        {/* Hover Card */}
                                         <AnimatePresence>
                                             {isHovered && !isModalOpen && (
                                                 <motion.div
-                                                    key="hover-card"
                                                     initial={{ opacity: 0, scale: 0.85, y: 30 }}
                                                     animate={{ opacity: 1, scale: 1, y: -10 }}
                                                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
                                                     transition={{ duration: 0.35, ease: "easeOut" }}
                                                     className={`absolute top-[-100px] ${getHoverPositionClass()} z-[100] w-[320px] bg-neutral-900 rounded-xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.85)] pointer-events-auto`}
                                                 >
-                                                    {/* Banner */}
                                                     <div className="relative w-full h-[180px] overflow-hidden">
                                                         <motion.img
                                                             src={getOptimizedImageUrl(movie.thumb_url)}
                                                             alt={movie.name}
-                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                            className="w-full h-full object-cover"
                                                         />
                                                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-
-                                                        {/* Quality badge on hover card */}
                                                         {movie.quality && (
                                                             <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 rounded text-xs font-bold">
                                                                 {movie.quality}
@@ -240,7 +244,6 @@ export default function GenreMoviesPage() {
                                                         )}
                                                     </div>
 
-                                                    {/* Info */}
                                                     <div className="p-3 space-y-2">
                                                         <h3 className="text-white font-semibold text-base line-clamp-1">
                                                             {detail.name}
@@ -248,10 +251,8 @@ export default function GenreMoviesPage() {
 
                                                         <div className="flex gap-2 items-center text-gray-400 text-sm flex-wrap">
                                                             {detail.year && <span>{detail.year}</span>}
-                                                            {detail.episode_total && <span>• {detail.episode_total}</span>}
-                                                            {detail.episode_current && (
-                                                                <span className="text-green-500 text-xs">• {detail.episode_current}</span>
-                                                            )}
+                                                            {detail.time && <span>• {detail.time}</span>}
+                                                            {detail.lang && <span>• {detail.lang}</span>}
                                                         </div>
 
                                                         {detail.origin_name && (
@@ -269,13 +270,13 @@ export default function GenreMoviesPage() {
                                                                 </motion.button>
                                                                 <motion.button
                                                                     whileTap={{ scale: 0.9 }}
-                                                                    className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+                                                                    className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10"
                                                                 >
                                                                     <Plus className="w-4 h-4" />
                                                                 </motion.button>
                                                                 <motion.button
                                                                     whileTap={{ scale: 0.9 }}
-                                                                    className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+                                                                    className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10"
                                                                 >
                                                                     <ThumbsUp className="w-4 h-4" />
                                                                 </motion.button>
@@ -284,7 +285,7 @@ export default function GenreMoviesPage() {
                                                             <motion.button
                                                                 whileTap={{ scale: 0.9 }}
                                                                 onClick={() => handleMoreInfo(movie.slug)}
-                                                                className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+                                                                className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10"
                                                             >
                                                                 <ChevronDown className="w-4 h-4" />
                                                             </motion.button>
@@ -315,15 +316,10 @@ export default function GenreMoviesPage() {
                                 <div className="flex items-center gap-2">
                                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                         let pageNum: number = 1;
-                                        if (totalPages <= 5) {
-                                            pageNum = i + 1;
-                                        } else if (page <= 3) {
-                                            pageNum = i + 1;
-                                        } else if (page >= totalPages - 2) {
-                                            pageNum = totalPages - 4 + i;
-                                        } else {
-                                            pageNum = page - 2 + i;
-                                        }
+                                        if (totalPages <= 5) pageNum = i + 1;
+                                        else if (page <= 3) pageNum = i + 1;
+                                        else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
+                                        else pageNum = page - 2 + i;
 
                                         return (
                                             <motion.button
@@ -361,7 +357,7 @@ export default function GenreMoviesPage() {
                 )}
             </div>
 
-            {/* Modal chi tiết */}
+            {/* Modal */}
             <AnimatePresence>
                 {isModalOpen && selectedMovie && (
                     <MovieDetailModal

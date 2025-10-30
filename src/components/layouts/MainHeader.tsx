@@ -1,6 +1,6 @@
 import { useState } from "react";
 import useOffSetTop from "src/hooks/useOffSetTop";
-import { APP_BAR_HEIGHT } from "src/constant";
+import { APP_BAR_HEIGHT, MAIN_PATH } from "src/constant";
 import Logo from "../Logo";
 import SearchBox from "../SearchBox";
 import NetflixNavigationLink from "../NetflixNavigationLink";
@@ -84,14 +84,14 @@ const MainHeader = () => {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6 flex-1">
           <NetflixNavigationLink
-            to="/phim-le"
+            to={`/${MAIN_PATH.featurefilm}`}
             className="text-white text-sm hover:text-gray-300"
           >
             Phim Lẻ
           </NetflixNavigationLink>
 
           <NetflixNavigationLink
-            to="/phim-bo"
+            to={`/${MAIN_PATH.series}`}
             className="text-white text-sm hover:text-gray-300"
           >
             Phim Bộ

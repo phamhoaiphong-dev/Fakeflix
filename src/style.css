@@ -41,8 +41,8 @@ body::-webkit-scrollbar {
   }
   
   .netflix-hero {
-    padding-left: clamp(1rem, 4vw, 3.5rem);
-    padding-right: clamp(1rem, 4vw, 3.5rem);
+    /* padding-left: clamp(1rem, 4vw, 3.5rem);
+    padding-right: clamp(1rem, 4vw, 3.5rem); */
   }
   
   .netflix-grid {

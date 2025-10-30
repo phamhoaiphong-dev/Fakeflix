@@ -1,3 +1,4 @@
+// SliderRowForGenre.tsx
 import { useEffect, useRef, useState } from "react";
 import { KKPhimMovie } from "src/types/KKPhim";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -18,14 +19,13 @@ export default function SliderRowForGenre({ title, movies }: SliderRowForGenrePr
   const handleScroll = () => {
     if (!sliderRef.current) return;
     const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
-    const tolerance = 5;
+    const tolerance = 1;
     setShowLeftButton(scrollLeft > tolerance);
     setShowRightButton(scrollLeft < scrollWidth - clientWidth - tolerance);
   };
 
   useEffect(() => {
     handleScroll();
-
     const handleResize = () => handleScroll();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -34,7 +34,7 @@ export default function SliderRowForGenre({ title, movies }: SliderRowForGenrePr
   const scroll = (dir: "left" | "right") => {
     if (!sliderRef.current) return;
     const { scrollLeft, clientWidth, scrollWidth } = sliderRef.current;
-    const scrollDistance = clientWidth * 0.85;
+    const scrollDistance = clientWidth * 0.9;
 
     let scrollTo =
       dir === "left" ? scrollLeft - scrollDistance : scrollLeft + scrollDistance;
@@ -45,64 +45,69 @@ export default function SliderRowForGenre({ title, movies }: SliderRowForGenrePr
   };
 
   return (
-    <div className="relative mb-6 pb-24">
-      <h2 className="text-white text-base sm:text-lg md:text-xl font-bold mb-3 px-4 sm:px-8 md:px-12">
+    <div className="relative mb-8 group/container">
+      {/* Title */}
+      <h2 className="text-white text-lg sm:text-xl md:text-2xl font-bold mb-4 px-4 sm:px-6 lg:px-12">
         {title}
       </h2>
 
-      <div className="group relative">
-        {/* Left scroll button - Netflix style */}
+      {/* WRAPPER CHO HOVER CARD TRÀN RA */}
+      <div className="relative overflow-visible">
+        {/* NÚT TRÁI */}
         {showLeftButton && (
           <button
             onClick={() => scroll("left")}
-            className="absolute left-0 top-0 bottom-0 z-[60] flex items-center justify-center
-              bg-black/40 hover:bg-black/60 w-12 md:w-16
-              opacity-0 group-hover:opacity-100 transition-all duration-300
-              focus:outline-none backdrop-blur-sm"
+            className="absolute left-0 top-0 bottom-0 z-40 w-16 sm:w-20 md:w-24 
+                       flex items-center justify-center
+                       bg-gradient-to-r from-black/80 via-black/50 to-transparent
+                       opacity-0 group-hover/container:opacity-100 
+                       transition-opacity duration-300 pointer-events-auto"
             aria-label="Scroll left"
           >
-            <ChevronLeft className="text-white w-10 h-10 md:w-12 md:h-12 drop-shadow-lg" strokeWidth={2.5} />
+            <ChevronLeft className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white drop-shadow-2xl" strokeWidth={3} />
           </button>
         )}
 
-        {/* Movie slider */}
+        {/* SLIDER – CHUẨN NETFLIX: KHÍT, ĐỀU, ĐẸP */}
         <div
           ref={sliderRef}
           onScroll={handleScroll}
-          className="flex gap-2 sm:gap-3 md:gap-4 scrollbar-hide scroll-smooth px-4 sm:px-8 md:px-12 py-4"
+          className="flex gap-1 sm:gap-1.5 md:gap-2 scrollbar-hide scroll-smooth py-4
+             px-4
+             overflow-x-auto overflow-y-hidden"
           style={{
-            overflowX: "auto",
-            overflowY: "visible",
-            // Removed scrollSnapType for smoother Netflix-like scrolling (optional: re-add if you want snapping)
-            WebkitOverflowScrolling: "touch",
+            scrollSnapType: "x mandatory",
           }}
         >
           {movies.map((movie, index) => (
             <div
               key={movie._id}
-              className="flex-shrink-0 w-[150px] sm:w-[180px] md:w-[220px]"
+              className="flex-shrink-0 
+                 w-[145px] sm:w-[175px] md:w-[215px] lg:w-[245px]
+                 scroll-snap-align-start"
               style={{
-                // Removed scrollSnapAlign for smoother Netflix-like scrolling (optional: re-add if you want snapping)
-                // Add slight delay for animation based on position
-                animationDelay: `${index * 0.05}s`
+                animation: `fadeIn 0.6s ease-out ${index * 0.05}s both`,
               }}
             >
-              <MovieCard movie={movie} />
+              <div className="relative hover:z-50">
+                <MovieCard movie={movie} />
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Right scroll button - Netflix style */}
+        {/* NÚT PHẢI */}
         {showRightButton && (
           <button
             onClick={() => scroll("right")}
-            className="absolute right-0 top-0 bottom-0 z-[60] flex items-center justify-center
-              bg-black/40 hover:bg-black/60 w-12 md:w-16
-              opacity-0 group-hover:opacity-100 transition-all duration-300
-              focus:outline-none backdrop-blur-sm"
+            className="absolute right-0 top-0 bottom-0 z-40 w-16 sm:w-20 md:w-24 
+                       flex items-center justify-center
+                       bg-gradient-to-l from-black/80 via-black/50 to-transparent
+                       opacity-0 group-hover/container:opacity-100 
+                       transition-opacity duration-300 pointer-events-auto"
             aria-label="Scroll right"
           >
-            <ChevronRight className="text-white w-10 h-10 md:w-12 md:h-12 drop-shadow-lg" strokeWidth={2.5} />
+            <ChevronRight className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white drop-shadow-2xl" strokeWidth={3} />
           </button>
         )}
       </div>
