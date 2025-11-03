@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/phimapi/:path*",
+      "source": "/api/:path*",
       "destination": "https://phimapi.com/:path*"
     },
     {
@@ -11,7 +11,7 @@
   ],
   "headers": [
     {
-      "source": "/phimapi/:path*",
+      "source": "/api/:path*",
       "headers": [
         {
           "key": "Cache-Control",

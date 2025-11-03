@@ -1,4 +1,4 @@
-import api from "../utils/apiHelper"; 
+import api from "../utils/apiHelper";
 import type {
   KKPhimMovie,
   KKPhimListResponse,
@@ -14,7 +14,8 @@ import type {
 const BASE_URL =
   import.meta.env.MODE === "development"
     ? "https://phimapi.com"
-    : "/phimapi";
+    : "/api";
+
 const API_V1_LIST = `${BASE_URL}/v1/api/danh-sach`;
 const API_V1 = `${BASE_URL}/v1/api`;
 
@@ -306,7 +307,7 @@ export async function fetchByYear(
 export async function fetchUSActionMovies(page = 1): Promise<KKPhimMovie[]> {
   try {
     const actionMovies = await fetchByGenre("hanh-dong", page);
-    
+
     // Client-side filter for US movies
     return actionMovies.filter((movie) => {
       const countries = movie.country?.map((c: any) => c.slug?.toLowerCase()) || [];
@@ -325,7 +326,7 @@ export async function fetchUSActionMovies(page = 1): Promise<KKPhimMovie[]> {
 export async function fetchKoreanDramas(page = 1): Promise<KKPhimMovie[]> {
   try {
     const koreanMovies = await fetchByCountry("han-quoc", page);
-    
+
     // Client-side filter for drama/psychology categories
     return koreanMovies.filter((movie) => {
       const categories = movie.category?.map((c: any) => c.slug?.toLowerCase()) || [];
@@ -376,13 +377,13 @@ export async function searchMovies(searchParams: SearchParams): Promise<KKPhimMo
         limit: searchParams.limit || 20,
       },
     });
-    
+
     // KKPhimSearchResponse có structure: data.items (có thể null)
     let items = res.data?.data?.items || [];
-    
+
     // Áp dụng lọc quốc gia
     items = filterAllowedCountries(items);
-    
+
     return items;
   } catch (err) {
     console.error("searchMovies error:", err);
