@@ -13,7 +13,7 @@ import type {
 const BASE_URL =
   import.meta.env.MODE === "development"
     ? "https://phimapi.com"
-    : "/phimapi";
+    : "";
 
 const API_V1_LIST = `${BASE_URL}/v1/api/danh-sach`;
 const API_V1 = `${BASE_URL}/v1/api`;
