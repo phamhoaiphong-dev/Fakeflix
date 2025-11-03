@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "../utils/apiHelper"; 
 import type {
   KKPhimMovie,
   KKPhimListResponse,
@@ -38,7 +38,7 @@ const ALLOWED_COUNTRIES = [
  */
 export async function fetchTrending(page = 1): Promise<KKPhimMovie[]> {
   try {
-    const res = await axios.get(`${BASE_URL}/danh-sach/phim-moi-cap-nhat-v3`, {
+    const res = await api.get(`${BASE_URL}/danh-sach/phim-moi-cap-nhat-v3`, {
       params: { page }
     });
     return res.data.items || [];
@@ -54,7 +54,7 @@ export async function fetchTrending(page = 1): Promise<KKPhimMovie[]> {
  */
 export async function fetchTopRatedMovies(page = 1, params?: MovieListParams): Promise<KKPhimMovie[]> {
   try {
-    const res = await axios.get<KKPhimListResponse>(`${API_V1_LIST}/phim-le`, {
+    const res = await api.get<KKPhimListResponse>(`${API_V1_LIST}/phim-le`, {
       params: {
         page,
         sort_field: params?.sort_field || "year",
@@ -79,7 +79,7 @@ export async function fetchTopRatedMovies(page = 1, params?: MovieListParams): P
  */
 export async function fetchTVShows(page = 1, params?: MovieListParams): Promise<KKPhimMovie[]> {
   try {
-    const res = await axios.get<KKPhimListResponse>(`${API_V1_LIST}/tv-shows`, {
+    const res = await api.get<KKPhimListResponse>(`${API_V1_LIST}/tv-shows`, {
       params: {
         page,
         sort_field: params?.sort_field || "modified.time",
@@ -103,7 +103,7 @@ export async function fetchTVShows(page = 1, params?: MovieListParams): Promise<
  */
 export async function fetchTrendingTVShows(page = 1): Promise<KKPhimMovie[]> {
   try {
-    const res = await axios.get<KKPhimListResponse>(`${API_V1_LIST}/phim-bo`, {
+    const res = await api.get<KKPhimListResponse>(`${API_V1_LIST}/phim-bo`, {
       params: {
         page,
         sort_field: "modified.time",
@@ -124,7 +124,7 @@ export async function fetchTrendingTVShows(page = 1): Promise<KKPhimMovie[]> {
  */
 export async function fetchAnime(page = 1, params?: MovieListParams): Promise<KKPhimMovie[]> {
   try {
-    const res = await axios.get<KKPhimListResponse>(`${API_V1_LIST}/hoat-hinh`, {
+    const res = await api.get<KKPhimListResponse>(`${API_V1_LIST}/hoat-hinh`, {
       params: {
         page,
         sort_field: params?.sort_field || "modified.time",
@@ -147,7 +147,7 @@ export async function fetchAnime(page = 1, params?: MovieListParams): Promise<KK
  */
 export async function fetchVietsub(page = 1, params?: MovieListParams): Promise<KKPhimMovie[]> {
   try {
-    const res = await axios.get<KKPhimListResponse>(`${API_V1_LIST}/phim-vietsub`, {
+    const res = await api.get<KKPhimListResponse>(`${API_V1_LIST}/phim-vietsub`, {
       params: {
         page,
         sort_field: params?.sort_field || "modified.time",
@@ -170,7 +170,7 @@ export async function fetchVietsub(page = 1, params?: MovieListParams): Promise<
  */
 export async function fetchThuyetMinh(page = 1, params?: MovieListParams): Promise<KKPhimMovie[]> {
   try {
-    const res = await axios.get<KKPhimListResponse>(`${API_V1_LIST}/phim-thuyet-minh`, {
+    const res = await api.get<KKPhimListResponse>(`${API_V1_LIST}/phim-thuyet-minh`, {
       params: {
         page,
         sort_field: params?.sort_field || "modified.time",
@@ -193,7 +193,7 @@ export async function fetchThuyetMinh(page = 1, params?: MovieListParams): Promi
  */
 export async function fetchLongTieng(page = 1, params?: MovieListParams): Promise<KKPhimMovie[]> {
   try {
-    const res = await axios.get<KKPhimListResponse>(`${API_V1_LIST}/phim-long-tieng`, {
+    const res = await api.get<KKPhimListResponse>(`${API_V1_LIST}/phim-long-tieng`, {
       params: {
         page,
         sort_field: params?.sort_field || "modified.time",
@@ -225,7 +225,7 @@ export async function fetchByGenre(
   params?: MovieListParams
 ): Promise<KKPhimMovie[]> {
   try {
-    const res = await axios.get<KKPhimListResponse>(`${API_V1_LIST}/phim-le`, {
+    const res = await api.get<KKPhimListResponse>(`${API_V1_LIST}/phim-le`, {
       params: {
         page,
         sort_field: params?.sort_field || "modified.time",
@@ -251,7 +251,7 @@ export async function fetchByCountry(
   params?: MovieListParams
 ): Promise<KKPhimMovie[]> {
   try {
-    const res = await axios.get<KKPhimListResponse>(`${API_V1_LIST}/phim-le`, {
+    const res = await api.get<KKPhimListResponse>(`${API_V1_LIST}/phim-le`, {
       params: {
         page,
         sort_field: params?.sort_field || "modified.time",
@@ -276,7 +276,7 @@ export async function fetchByYear(
   params?: MovieListParams
 ): Promise<KKPhimMovie[]> {
   try {
-    const res = await axios.get<KKPhimListResponse>(`${API_V1_LIST}/phim-le`, {
+    const res = await api.get<KKPhimListResponse>(`${API_V1_LIST}/phim-le`, {
       params: {
         page,
         sort_field: params?.sort_field || "modified.time",
@@ -360,7 +360,7 @@ export async function fetchAsianHorror(page = 1): Promise<KKPhimMovie[]> {
  */
 export async function searchMovies(searchParams: SearchParams): Promise<KKPhimMovie[]> {
   try {
-    const res = await axios.get<KKPhimSearchResponse>(`${API_V1}/tim-kiem`, {
+    const res = await api.get<KKPhimSearchResponse>(`${API_V1}/tim-kiem`, {
       params: {
         keyword: searchParams.keyword,
         page: searchParams.page || 1,
@@ -395,7 +395,17 @@ export async function searchMovies(searchParams: SearchParams): Promise<KKPhimMo
  */
 export async function fetchMovieDetail(slug: string): Promise<KKPhimDetailResponse | null> {
   try {
-    const res = await axios.get<KKPhimDetailResponse>(`${BASE_URL}/phim/${slug}`);
+    const res = await api.get<KKPhimDetailResponse>(`${BASE_URL}/phim/${slug}`, {
+      // BỎ cache: 'no-store'
+      // Thay bằng query param để phá cache
+      params: {
+        _t: Date.now()  // URL luôn khác → không bị 304
+      },
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     return res.data;
   } catch (err) {
     console.error("fetchMovieDetail error:", err);
@@ -408,7 +418,7 @@ export async function fetchMovieDetail(slug: string): Promise<KKPhimDetailRespon
  */
 export async function fetchByTMDB(type: "tv" | "movie", id: string): Promise<KKPhimDetailResponse | null> {
   try {
-    const res = await axios.get<KKPhimDetailResponse>(`${BASE_URL}/tmdb/${type}/${id}`);
+    const res = await api.get<KKPhimDetailResponse>(`${BASE_URL}/tmdb/${type}/${id}`);
     return res.data;
   } catch (err) {
     console.error("fetchByTMDB error:", err);
@@ -425,7 +435,7 @@ export async function fetchByTMDB(type: "tv" | "movie", id: string): Promise<KKP
  */
 export async function fetchCategories() {
   try {
-    const res = await axios.get<KKPhimCategoriesResponse>(`${BASE_URL}/the-loai`);
+    const res = await api.get<KKPhimCategoriesResponse>(`${BASE_URL}/the-loai`);
     return res.data.data.items || [];
   } catch (err) {
     console.error("fetchCategories error:", err);
@@ -438,7 +448,7 @@ export async function fetchCategories() {
  */
 export async function fetchCountries() {
   try {
-    const res = await axios.get<KKPhimCountriesResponse>(`${BASE_URL}/quoc-gia`);
+    const res = await api.get<KKPhimCountriesResponse>(`${BASE_URL}/quoc-gia`);
     return res.data.data.items || [];
   } catch (err) {
     console.error("fetchCountries error:", err);
@@ -531,7 +541,7 @@ function filterAllowedCountries(items: any[] = []) {
 
 
 
-axios.interceptors.response.use((response) => {
+api.interceptors.response.use((response) => {
   // Hỗ trợ nhiều response structures
   if (Array.isArray(response?.data?.items)) {
     response.data.items = filterAllowedCountries(response.data.items);
