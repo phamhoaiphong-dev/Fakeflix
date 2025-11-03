@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Play, Info } from "lucide-react";
 import { KKPhimMovie } from "src/types/KKPhim";
 import { useNavigate } from "react-router-dom";
-import { useMovieDetail } from "src/hooks/useMovieDetail";
 import MovieDetailModal from "./watch/MovieDetailOverlay";
 
 interface HeroSectionProps {
@@ -12,15 +11,48 @@ interface HeroSectionProps {
 export default function HeroSection({ movie }: HeroSectionProps) {
   const navigate = useNavigate();
   const [showOverlay, setShowOverlay] = useState(false);
+  const [movieDetail, setMovieDetail] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { data: detail, isLoading } = useMovieDetail(movie.slug);
+  useEffect(() => {
+    setIsLoading(true);
+    
+    fetch(`https://phimapi.com/phim/${movie.slug}`)
+      .then(res => res.json())
+      .then(data => {
+        console.log("Hero Section - API Response:", data); 
+        
+        if (data.status === true && data.movie) {
+          setMovieDetail(data);
+        } else {
+          console.error("Hero Section - Invalid API response:", data);
+        }
+      })
+      .catch(err => {
+        console.error("Hero Section - Fetch error:", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [movie.slug]);
 
   const handlePlay = () => navigate(`/watch/${movie.slug}?fullscreen=true`);
-  const handleShowDetail = () => setShowOverlay(true);
+  
+  const handleShowDetail = () => {
+    console.log("Show Detail clicked, movieDetail:", movieDetail);
+    
+    if (!movieDetail) {
+      alert("Đang tải thông tin phim...");
+      return;
+    }
+    
+    setShowOverlay(true);
+  };
+  
   const handleCloseOverlay = () => setShowOverlay(false);
 
   const content =
-    detail?.movie?.content ||
+    movieDetail?.movie?.content ||
     movie.origin_name ||
     "Hiện chưa có mô tả cho phim này.";
 
@@ -57,22 +89,23 @@ export default function HeroSection({ movie }: HeroSectionProps) {
 
             <button
               onClick={handleShowDetail}
-              className="flex items-center gap-2 bg-gray-700/80 text-white text-lg font-semibold px-6 py-2 rounded-md hover:bg-gray-600 transition"
+              disabled={isLoading}
+              className="flex items-center gap-2 bg-gray-700/80 text-white text-lg font-semibold px-6 py-2 rounded-md hover:bg-gray-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Info size={24} /> Chi tiết
+              <Info size={24} /> 
+              {isLoading ? "Đang tải..." : "Chi tiết"}
             </button>
           </div>
         </div>
       </div>
 
-      {showOverlay && detail && (
+      {showOverlay && movieDetail && (
         <MovieDetailModal
-          movie={detail}
+          movie={movieDetail}
           isOpen={showOverlay}
           onClose={handleCloseOverlay}
         />
       )}
-
     </>
   );
 }
