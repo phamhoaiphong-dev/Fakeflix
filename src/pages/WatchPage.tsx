@@ -189,7 +189,6 @@ export default function WatchPage() {
 
   if (!movie) return null;
 
-  // ⭐ FIX 4: Kiểm tra currentEpisode trước khi render iframe
   console.log('[WatchPage] Render state:', {
     currentEpisode,
     selectedServer,

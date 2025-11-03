@@ -10,11 +10,7 @@ import type {
   SearchParams,
   MovieType,
 } from "../types/KKPhim";
-const BASE_URL =
-  import.meta.env.MODE === "development"
-    ? "https://phimapi.com"
-    : "";
-
+const BASE_URL = "https://phimapi.com";
 const API_V1_LIST = `${BASE_URL}/v1/api/danh-sach`;
 const API_V1 = `${BASE_URL}/v1/api`;
 

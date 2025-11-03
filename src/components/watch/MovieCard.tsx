@@ -1,4 +1,3 @@
-// MovieCard.tsx - Dùng fetch trực tiếp như SeriesPage
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Plus, ThumbsUp, ChevronDown } from "lucide-react";
@@ -17,7 +16,6 @@ export default function MovieCard({ movie }: { movie: KKPhimMovie }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ✅ Fetch detail khi hover - GIỐNG SeriesPage
   useEffect(() => {
     if (isHovered && !movieDetail && !isLoadingDetail) {
       setIsLoadingDetail(true);
@@ -88,7 +86,7 @@ export default function MovieCard({ movie }: { movie: KKPhimMovie }) {
 
   const handleMoreInfo = () => {
     setShowModal(true);
-    setIsHovered(false); // Đóng hover card
+    setIsHovered(false); 
   };
 
   const getHoverPositionClass = () => {
