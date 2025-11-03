@@ -2,37 +2,37 @@ import { Navigate, createBrowserRouter } from "react-router-dom";
 import { MAIN_PATH } from "src/constant";
 import MainLayout from "src/layouts/MainLayout";
 
+import AuthPage from "src/pages/AuthPage";
+import SignUpPage from "src/pages/SignUpPage";
+
 const HomePage = () => import("src/pages/HomePage");
 const GenrePage = () => import("src/pages/GenrePage");
 const WatchPage = () => import("src/pages/WatchPage");
 const CountryPage = () => import("src/pages/CountryPage");
 const FeatureFilmsPage = () => import("src/pages/FeatureFilmsPage");
 const SeriesPage = () => import("src/pages/SeriesPage");
-const AuthPage = () => import("src/pages/AuthPage");
 
 const router = createBrowserRouter([
-  {
-    path: "/sign-in",
-    lazy: async () => {
-      const module = await AuthPage();
-      return { Component: module.default };
-    },
-  },
-  {
-    path: "/sign-up",
-    lazy: async () => {
-      const module = await AuthPage();
-      return { Component: module.default };
-    },
-  },
   {
     path: MAIN_PATH.root,
     element: <MainLayout />,
     children: [
-      {
-        index: true,
-        element: <Navigate to={`/${MAIN_PATH.browse}`} replace />,
+      { 
+        index: true, 
+        element: <Navigate to={`/${MAIN_PATH.browse}`} replace />
       },
+
+      {
+        path: "sign-in/*",
+        element: <AuthPage />,
+      },
+
+      {
+        path: "sign-up/*",
+        element: <SignUpPage />,
+      },
+
+      // Protected routes
       {
         path: MAIN_PATH.browse,
         lazy: async () => {
@@ -40,6 +40,7 @@ const router = createBrowserRouter([
           return { Component: module.default };
         },
       },
+
       {
         path: MAIN_PATH.featurefilm,
         lazy: async () => {
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
           return { Component: module.default };
         },
       },
+
       {
         path: MAIN_PATH.series,
         lazy: async () => {
@@ -54,6 +56,7 @@ const router = createBrowserRouter([
           return { Component: module.default };
         },
       },
+
       {
         path: `${MAIN_PATH.genre}/:slug`,
         lazy: async () => {
@@ -61,6 +64,7 @@ const router = createBrowserRouter([
           return { Component: module.default };
         },
       },
+
       {
         path: `${MAIN_PATH.watch}/:slug`,
         lazy: async () => {
@@ -68,6 +72,7 @@ const router = createBrowserRouter([
           return { Component: module.default };
         },
       },
+
       {
         path: `${MAIN_PATH.country}/:slug`,
         lazy: async () => {
