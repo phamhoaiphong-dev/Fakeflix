@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+// MovieCard.tsx - Dùng fetch trực tiếp như SeriesPage
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Plus, ThumbsUp, ChevronDown } from "lucide-react";
 import { KKPhimMovie } from "src/types/KKPhim";
-import { useGetMovieDetailQuery } from "src/store/slices/discover";
 import { getMovieImage } from "src/utils/imageHelper";
 import { handlePlayClick } from "src/utils/playHelper";
 import MovieDetailModal from "src/components/watch/MovieDetailOverlay";
@@ -11,16 +11,41 @@ export default function MovieCard({ movie }: { movie: KKPhimMovie }) {
   const [isHovered, setIsHovered] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [hoverPosition, setHoverPosition] = useState<"left" | "center" | "right">("center");
+  const [movieDetail, setMovieDetail] = useState<any>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  
   const cardRef = useRef<HTMLDivElement>(null);
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { data: movieData } = useGetMovieDetailQuery(movie.slug, {
-    skip: !isHovered && !showModal,
-  });
-
-  const detail = movieData?.movie;
+  // ✅ Fetch detail khi hover - GIỐNG SeriesPage
+  useEffect(() => {
+    if (isHovered && !movieDetail && !isLoadingDetail) {
+      setIsLoadingDetail(true);
+      
+      fetch(`https://phimapi.com/phim/${movie.slug}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === true && data.movie) {
+            setMovieDetail(data);
+          } else {
+            console.error("API returned error:", data);
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching movie detail:", err);
+        })
+        .finally(() => {
+          setIsLoadingDetail(false);
+        });
+    }
+  }, [isHovered, movie.slug, movieDetail, isLoadingDetail]);
 
   const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
+    // Tính toán vị trí
     if (cardRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
       const windowWidth = window.innerWidth;
@@ -31,20 +56,39 @@ export default function MovieCard({ movie }: { movie: KKPhimMovie }) {
       else setHoverPosition("center");
     }
 
-    const timeout = setTimeout(() => setIsHovered(true), 300);
-    setHoverTimeout(timeout);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(true);
+    }, 300);
   };
 
   const handleMouseLeave = () => {
-    if (hoverTimeout) clearTimeout(hoverTimeout);
-    setTimeout(() => setIsHovered(false), 150);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(false);
+    }, 200);
   };
 
   const handlePlay = () => {
-    if (!movieData) return alert("Đang tải dữ liệu phim...");
-    const firstEpisode = movieData?.episodes?.[0]?.server_data?.[0];
-    if (!firstEpisode) return alert("Phim này chưa có tập để phát.");
+    if (!movieDetail) {
+      alert("Đang tải dữ liệu phim...");
+      return;
+    }
+    
+    const firstEpisode = movieDetail?.episodes?.[0]?.server_data?.[0];
+    if (!firstEpisode) {
+      alert("Phim này chưa có tập để phát.");
+      return;
+    }
+    
     handlePlayClick({ slug: movie.slug, episode: firstEpisode });
+  };
+
+  const handleMoreInfo = () => {
+    setShowModal(true);
+    setIsHovered(false); // Đóng hover card
   };
 
   const getHoverPositionClass = () => {
@@ -54,6 +98,8 @@ export default function MovieCard({ movie }: { movie: KKPhimMovie }) {
         ? "right-0 origin-top-right"
         : "left-1/2 -translate-x-1/2 origin-top";
   };
+
+  const detail = movieDetail?.movie || movie;
 
   return (
     <>
@@ -83,9 +129,9 @@ export default function MovieCard({ movie }: { movie: KKPhimMovie }) {
           )}
         </motion.div>
 
-        {/* Hover Preview Card - Ẩn khi modal lớn mở */}
+        {/* Hover Preview Card */}
         <AnimatePresence>
-          {isHovered && detail && !showModal && (
+          {isHovered && !showModal && (
             <motion.div
               key="hover-card"
               initial={{ opacity: 0, scale: 0.9, y: 10 }}
@@ -95,10 +141,14 @@ export default function MovieCard({ movie }: { movie: KKPhimMovie }) {
               className={`absolute z-[70] w-[280px] bg-neutral-900 rounded-lg overflow-hidden 
                 shadow-[0_8px_32px_rgba(0,0,0,0.6)] border border-white/5 ${getHoverPositionClass()}`}
               style={{ top: "-4px" }}
-              onMouseEnter={handleMouseEnter}
+              onMouseEnter={() => {
+                if (hoverTimeoutRef.current) {
+                  clearTimeout(hoverTimeoutRef.current);
+                }
+              }}
               onMouseLeave={handleMouseLeave}
             >
-              {/* Banner - Compact */}
+              {/* Banner */}
               <div className="relative w-full h-[140px] overflow-hidden">
                 <img
                   src={getMovieImage(detail, "thumb")}
@@ -113,7 +163,7 @@ export default function MovieCard({ movie }: { movie: KKPhimMovie }) {
                 )}
               </div>
 
-              {/* Info - Compact */}
+              {/* Info */}
               <div className="p-2.5 space-y-1">
                 <h3 className="text-white font-semibold text-xs line-clamp-1 leading-tight">
                   {detail.name}
@@ -133,47 +183,57 @@ export default function MovieCard({ movie }: { movie: KKPhimMovie }) {
                   </p>
                 )}
 
-                <div className="flex items-center justify-between mt-1.5 pt-1.5">
-                  <div className="flex gap-1.5">
+                {/* Loading state */}
+                {isLoadingDetail && (
+                  <div className="flex items-center justify-center py-2">
+                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                {!isLoadingDetail && (
+                  <div className="flex items-center justify-between mt-1.5 pt-1.5">
+                    <div className="flex gap-1.5">
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handlePlay}
+                        className="w-6 h-6 bg-white rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+                      >
+                        <Play className="w-3 h-3 text-black ml-0.5" fill="currentColor" />
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        className="w-6 h-6 border border-gray-500 rounded-full flex items-center justify-center text-white hover:border-white transition-colors"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        className="w-6 h-6 border border-gray-500 rounded-full flex items-center justify-center text-white hover:border-white transition-colors"
+                      >
+                        <ThumbsUp className="w-3 h-3" />
+                      </motion.button>
+                    </div>
+
                     <motion.button
                       whileTap={{ scale: 0.9 }}
-                      onClick={handlePlay}
-                      className="w-6 h-6 bg-white rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-                    >
-                      <Play className="w-3 h-3 text-black ml-0.5" fill="currentColor" />
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
+                      onClick={handleMoreInfo}
                       className="w-6 h-6 border border-gray-500 rounded-full flex items-center justify-center text-white hover:border-white transition-colors"
                     >
-                      <Plus className="w-3 h-3" />
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      className="w-6 h-6 border border-gray-500 rounded-full flex items-center justify-center text-white hover:border-white transition-colors"
-                    >
-                      <ThumbsUp className="w-3 h-3" />
+                      <ChevronDown className="w-3 h-3" />
                     </motion.button>
                   </div>
-
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setShowModal(true)}
-                    className="w-6 h-6 border border-gray-500 rounded-full flex items-center justify-center text-white hover:border-white transition-colors"
-                  >
-                    <ChevronDown className="w-3 h-3" />
-                  </motion.button>
-                </div>
+                )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Modal */}
-      {movieData && (
+      {/* Modal - Chỉ render khi có data */}
+      {showModal && movieDetail && (
         <MovieDetailModal
-          movie={movieData}
+          movie={movieDetail}
           isOpen={showModal}
           onClose={() => setShowModal(false)}
         />
