@@ -1,13 +1,17 @@
 {
   "rewrites": [
     {
+      "source": "/phimapi/:path*",
+      "destination": "https://phimapi.com/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }
   ],
   "headers": [
     {
-      "source": "/phim/:slug",
+      "source": "/phimapi/:path*",
       "headers": [
         {
           "key": "Cache-Control",
