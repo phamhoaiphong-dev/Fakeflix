@@ -3,6 +3,7 @@ import { Play, Info } from "lucide-react";
 import { KKPhimMovie } from "src/types/KKPhim";
 import { useNavigate } from "react-router-dom";
 import MovieDetailModal from "./watch/MovieDetailOverlay";
+import { getApiUrl } from "src/utils/api";
 
 interface HeroSectionProps {
   movie: KKPhimMovie;
@@ -16,12 +17,10 @@ export default function HeroSection({ movie }: HeroSectionProps) {
 
   useEffect(() => {
     setIsLoading(true);
-    
-    fetch(`https://phimapi.com/phim/${movie.slug}`)
+
+    fetch(getApiUrl(`/phim/${movie.slug}`))
       .then(res => res.json())
       .then(data => {
-        console.log("Hero Section - API Response:", data); 
-        
         if (data.status === true && data.movie) {
           setMovieDetail(data);
         } else {
@@ -37,18 +36,18 @@ export default function HeroSection({ movie }: HeroSectionProps) {
   }, [movie.slug]);
 
   const handlePlay = () => navigate(`/watch/${movie.slug}?fullscreen=true`);
-  
+
   const handleShowDetail = () => {
     console.log("Show Detail clicked, movieDetail:", movieDetail);
-    
+
     if (!movieDetail) {
       alert("Đang tải thông tin phim...");
       return;
     }
-    
+
     setShowOverlay(true);
   };
-  
+
   const handleCloseOverlay = () => setShowOverlay(false);
 
   const content =
@@ -92,7 +91,7 @@ export default function HeroSection({ movie }: HeroSectionProps) {
               disabled={isLoading}
               className="flex items-center gap-2 bg-gray-700/80 text-white text-lg font-semibold px-6 py-2 rounded-md hover:bg-gray-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Info size={24} /> 
+              <Info size={24} />
               {isLoading ? "Đang tải..." : "Chi tiết"}
             </button>
           </div>
