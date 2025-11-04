@@ -4,7 +4,6 @@ export const API_CONFIG = {
 };
 
 export function getApiUrl(path: string): string {
-  // Đảm bảo path luôn có dấu "/" 
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const cleanPath = path.replace(/^\/api/, '').replace(/^\/+/, '/');
   return `${API_CONFIG.PROXY_URL}${cleanPath}`;
 }
