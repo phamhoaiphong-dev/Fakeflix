@@ -4,6 +4,7 @@ import MainLayout from "src/layouts/MainLayout";
 
 import AuthPage from "src/pages/AuthPage";
 import SignUpPage from "src/pages/SignUpPage";
+import UserInfoPage from "src/pages/UserInfoPage";
 
 const HomePage = () => import("src/pages/HomePage");
 const GenrePage = () => import("src/pages/GenrePage");
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
         element: <SignUpPage />,
       },
 
+      {
+        path: "account/*",
+        element: <UserInfoPage />,
+      },
       // Protected routes
       {
         path: MAIN_PATH.browse,
