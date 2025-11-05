@@ -4,6 +4,6 @@ export const API_CONFIG = {
 };
 
 export function getApiUrl(path: string): string {
-  const cleanPath = path.replace(/^\/api/, '').replace(/^\/+/, '/');
-  return `${API_CONFIG.PROXY_URL}${cleanPath}`;
+  const cleanPath = path.replace(/^\/api/, '').replace(/^\/+/, '');
+  return `${API_CONFIG.PROXY_URL}/${cleanPath}`;
 }

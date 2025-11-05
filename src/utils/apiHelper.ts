@@ -2,7 +2,9 @@ import axios from "axios";
 import { API_CONFIG } from "./api";
 
 const api = axios.create({
-  baseURL: API_CONFIG.USE_PROXY ? API_CONFIG.PROXY_URL : "https://phimapi.com",
+  baseURL: API_CONFIG.USE_PROXY
+    ? API_CONFIG.PROXY_URL
+    : "https://phimapi.com",
   timeout: 15000,
 });
 
