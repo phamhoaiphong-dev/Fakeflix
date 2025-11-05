@@ -77,6 +77,15 @@ export default function WatchPage() {
       console.log('[WatchPage] No ep param, using first episode');
     }
   }, [episodes, searchParams]);
+  
+  console.log("[DEBUG] Render WatchPage:", {
+    hasEpisodes: !!episodes,
+    episodesLength: episodes?.length,
+    selectedServer,
+    selectedEpisode,
+    currentEpisode,
+  });
+
 
   useEffect(() => {
     if (!currentEpisode?.link_m3u8 || !videoRef.current) return;
@@ -97,6 +106,9 @@ export default function WatchPage() {
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log("[HLS] Manifest loaded ✅", src);
+        console.log("[DEBUG] Current episode link:", currentEpisode?.link_m3u8);
+        console.log("[DEBUG] Proxy src:", src);
+
         video.play().catch(() => { });
       });
 

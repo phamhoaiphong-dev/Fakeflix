@@ -26,7 +26,7 @@ export function useMovieDetail(slug?: string): UseMovieDetailResult {
         setIsLoading(true);
         setError(null);
 
-        const url = `/api/phim/${encodeURIComponent(slug)}`;
+        const url = `https://api.isme.io.vn/phim/${encodeURIComponent(slug)}`;
         const response = await fetch(url);
 
         if (!response.ok) {
