@@ -222,7 +222,7 @@ export default function WatchPage() {
 
   return (
     <div className="relative w-full h-screen bg-black text-white overflow-hidden">
-      {currentEpisode?.link_embed ? (
+      {currentEpisode?.link_m3u8 ? (
         <div className="relative w-full h-full">
           {/* Video iframe */}
           <video
