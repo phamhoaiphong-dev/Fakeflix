@@ -7,32 +7,38 @@ export default function MainLayout() {
   const { isLoaded, isSignedIn } = useAuth();
   const location = useLocation();
 
+  // ⏳ 1. Chờ Clerk load xong (tránh redirect sớm)
   if (!isLoaded) {
     return (
       <div className="w-full min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+        <div className="text-white text-lg">Loading...</div>
       </div>
     );
   }
 
-  const isAuthPage = location.pathname === "/sign-in" || location.pathname === "/sign-up";
+  const isAuthPage =
+    location.pathname === "/sign-in" || location.pathname === "/sign-up";
 
-  // 1. Nếu chưa đăng nhập + không phải trang auth → redirect
+  // 🚪 2. Nếu chưa đăng nhập + không ở trang auth → chuyển sang /sign-in
   if (!isSignedIn && !isAuthPage) {
     return <Navigate to="/sign-in" replace />;
   }
 
-  // 2. Nếu đã đăng nhập + đang ở trang auth → về trang chủ
+  // 🏠 3. Nếu đã đăng nhập + đang ở /sign-in hoặc /sign-up → về trang chủ
   if (isSignedIn && isAuthPage) {
     return <Navigate to={`/${MAIN_PATH.browse}`} replace />;
   }
 
-  // 3. Nếu là trang auth → chỉ render form (không có header, footer)
+  // 🔐 4. Nếu là trang auth (sign-in / sign-up) 
   if (isAuthPage) {
-    return <Outlet />;
+    return (
+      <div className="w-full min-h-screen bg-black flex items-center justify-center">
+        <Outlet />
+      </div>
+    );
   }
 
-  // 4. Nếu đã đăng nhập → render app chính
+  // 🎬 5. Nếu đã đăng nhập → render app chính
   return (
     <div className="w-full min-h-screen bg-black px-0">
       <MainHeader />
