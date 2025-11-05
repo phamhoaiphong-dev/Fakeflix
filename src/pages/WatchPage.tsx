@@ -1,3 +1,4 @@
+import Hls from "hls.js";
 import { useMovieDetail, useRecommendMovies } from "src/hooks/useMovieDetail";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,10 +20,17 @@ export default function WatchPage() {
   const [isEpisodeReady, setIsEpisodeReady] = useState(false);
 
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const videoRef = useRef<HTMLIFrameElement | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const movie = data?.movie;
   const episodes = data?.episodes;
+
+  const currentEpisode =
+    selectedEpisode !== null &&
+      episodes?.[selectedServer]?.server_data?.[selectedEpisode]
+      ? episodes[selectedServer].server_data[selectedEpisode]
+      : null;
 
   useEffect(() => {
     if (!episodes || episodes.length === 0) {
@@ -31,7 +39,7 @@ export default function WatchPage() {
     }
 
     const epSlug = searchParams.get("ep");
-    
+
     if (epSlug) {
       // Tìm episode theo slug
       let found = false;
@@ -44,7 +52,7 @@ export default function WatchPage() {
             return ep.slug === epSlug || epSlugClean === paramSlugClean;
           }
         );
-        
+
         if (epIdx !== -1) {
           setSelectedServer(serverIdx);
           setSelectedEpisode(epIdx);
@@ -54,7 +62,7 @@ export default function WatchPage() {
           break;
         }
       }
-      
+
       if (!found) {
         console.warn('[WatchPage] Episode not found, defaulting to first episode');
         setSelectedServer(0);
@@ -70,13 +78,29 @@ export default function WatchPage() {
     }
   }, [episodes, searchParams]);
 
-  const currentEpisode = 
-    selectedEpisode !== null && 
-    episodes?.[selectedServer]?.server_data?.[selectedEpisode] 
-      ? episodes[selectedServer].server_data[selectedEpisode] 
-      : null;
+  useEffect(() => {
+    if (!currentEpisode?.link_m3u8 || !videoRef.current) return;
 
-  const { data: similarMovies } = useRecommendMovies(movie?.category?.[0]?._id);
+    const src = `https://api.isme.io.vn/proxy/m3u8?url=${encodeURIComponent(
+      currentEpisode.link_m3u8
+    )}`;
+
+    const video = videoRef.current;
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({ autoStartLoad: true });
+      hls.loadSource(src);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        video.play().catch(() => { });
+      });
+      return () => hls.destroy();
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = src;
+      video.play().catch(() => { });
+    }
+  }, [currentEpisode]);
+
 
   // Fetch related seasons/parts based on 
   useEffect(() => {
@@ -134,39 +158,39 @@ export default function WatchPage() {
   };
 
   if (isLoading || !isEpisodeReady) {
-  return (
-    <div className="w-full h-screen flex items-center justify-center bg-black">
-      <div className="flex flex-col items-center">
-        {/* Netflix Logo */}
-        <motion.div
-          initial={{ opacity: 0.3, scale: 0.8 }}
-          animate={{
-            opacity: [0.3, 1, 0.3],
-            scale: [0.8, 1, 0.8],
-          }}
-          transition={{
-            duration: 1.8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="text-red-600 text-7xl font-extrabold tracking-tighter"
-        >
-          N
-        </motion.div>
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-black">
+        <div className="flex flex-col items-center">
+          {/* Netflix Logo */}
+          <motion.div
+            initial={{ opacity: 0.3, scale: 0.8 }}
+            animate={{
+              opacity: [0.3, 1, 0.3],
+              scale: [0.8, 1, 0.8],
+            }}
+            transition={{
+              duration: 1.8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="text-red-600 text-7xl font-extrabold tracking-tighter"
+          >
+            N
+          </motion.div>
 
-        {/* Subtle fade text */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 1, 0] }}
-          transition={{ duration: 2.5, repeat: Infinity }}
-          className="mt-4 text-gray-400 text-sm tracking-widest"
-        >
-          NETFLIX
-        </motion.p>
+          {/* Subtle fade text */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
+            className="mt-4 text-gray-400 text-sm tracking-widest"
+          >
+            NETFLIX
+          </motion.p>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
 
   if (error) {
@@ -201,16 +225,15 @@ export default function WatchPage() {
       {currentEpisode?.link_embed ? (
         <div className="relative w-full h-full">
           {/* Video iframe */}
-          <iframe
+          <video
             key={`${selectedServer}-${selectedEpisode}`}
             ref={videoRef}
-            src={currentEpisode.link_embed}
-            className="absolute inset-0 w-full h-full"
-            allow="autoplay; encrypted-media; picture-in-picture"
-            sandbox="allow-scripts allow-same-origin allow-presentation"
-            allowFullScreen
-            title={`${movie.name} - ${currentEpisode.name}`}
+            className="absolute inset-0 w-full h-full object-contain bg-black"
+            controls
+            autoPlay
+            playsInline
           />
+
 
           {/* Top bar */}
           <AnimatePresence>
