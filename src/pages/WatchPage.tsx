@@ -81,21 +81,32 @@ export default function WatchPage() {
   useEffect(() => {
     if (!currentEpisode?.link_m3u8 || !videoRef.current) return;
 
-    const src = `https://api.isme.io.vn/proxy/m3u8?url=${encodeURIComponent(
-      currentEpisode.link_m3u8
-    )}`;
+    const rawUrl = currentEpisode.link_m3u8.startsWith("http")
+      ? currentEpisode.link_m3u8
+      : `https:${currentEpisode.link_m3u8}`;
+
+    const src = `https://api.isme.io.vn/proxy/m3u8?url=${encodeURIComponent(rawUrl)}`;
+
 
     const video = videoRef.current;
 
     if (Hls.isSupported()) {
-      const hls = new Hls({ autoStartLoad: true });
+      const hls = new Hls({ autoStartLoad: true, debug: false });
       hls.loadSource(src);
       hls.attachMedia(video);
+
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        console.log("[HLS] Manifest loaded ✅", src);
         video.play().catch(() => { });
       });
+
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        console.error("[HLS Error]", data);
+      });
+
       return () => hls.destroy();
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+    }
+    else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = src;
       video.play().catch(() => { });
     }
