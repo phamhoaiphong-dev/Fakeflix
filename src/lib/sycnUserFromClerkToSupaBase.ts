@@ -15,7 +15,7 @@ export async function syncUserToSupabase(user: UserResource) {
 
   try {
     const { data, error } = await supabase
-      .from("user-info")
+      .from("user_info")
       .upsert(
         [
           {

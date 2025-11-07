@@ -67,7 +67,7 @@ const MainHeader = () => {
           <DropdownCountry />
 
           <NetflixNavigationLink
-            to="/danh-sach-yeu-thich"
+            to="/favorites-list"
             className="text-white text-sm hover:text-gray-300"
           >
             Danh Sách Yêu Thích

@@ -8,6 +8,7 @@ export const MAIN_PATH = {
   browse: "browse",
   series: "phim-bo",
   featurefilm: "phim-le",
+  favorites: "favorites-list",
   myList: "my-list",
   genre: "the-loai",
   watch: "watch",

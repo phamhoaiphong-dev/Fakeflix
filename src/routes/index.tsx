@@ -12,6 +12,7 @@ const WatchPage = () => import("src/pages/WatchPage");
 const CountryPage = () => import("src/pages/CountryPage");
 const FeatureFilmsPage = () => import("src/pages/FeatureFilmsPage");
 const SeriesPage = () => import("src/pages/SeriesPage");
+const FavoritesPage = () => import("src/pages/FavoritesPage");
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,13 @@ const router = createBrowserRouter([
         element: <UserInfoPage />,
       },
       // Protected routes
+      {
+        path: MAIN_PATH.favorites,
+        lazy: async () => {
+          const module = await FavoritesPage();
+          return { Component: module.default };
+        },
+      },
       {
         path: MAIN_PATH.browse,
         lazy: async () => {
