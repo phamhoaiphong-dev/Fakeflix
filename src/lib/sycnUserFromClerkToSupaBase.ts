@@ -14,41 +14,26 @@ export async function syncUserToSupabase(user: UserResource) {
   };
 
   try {
-    // 🔎 Kiểm tra xem user đã tồn tại chưa
-    const { data: existingUser, error: fetchError } = await supabase
+    const { data, error } = await supabase
       .from("user-info")
-      .select("id")
-      .eq("clerk_id", user.id)
-      .maybeSingle(); // ✅ dùng maybeSingle thay vì single
+      .upsert(
+        [
+          {
+            ...payload,
+            created_at: new Date().toISOString(),
+          },
+        ],
+        { onConflict: "clerk_id" } 
+      )
+      .select()
+      .single();
 
-    if (fetchError) {
-      console.error("⚠️ Lỗi khi kiểm tra user:", fetchError);
-      return;
-    }
-
-    if (!existingUser) {
-      // 🆕 Tạo mới
-      const { error: insertError } = await supabase.from("user-info").insert([
-        {
-          ...payload,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-
-      if (insertError) console.error("❌ Lỗi khi thêm user:", insertError);
-      else console.log("✅ User mới đã được thêm vào Supabase.");
+    if (error) {
+      console.error("❌ Lỗi khi upsert user:", error);
     } else {
-      // 🔁 Cập nhật
-      const { error: updateError } = await supabase
-        .from("user-info")
-        .update(payload)
-        .eq("clerk_id", user.id);
-
-      if (updateError)
-        console.error("⚠️ Lỗi khi cập nhật user:", updateError);
-      else console.log("♻️ User đã được cập nhật trong Supabase.");
+      console.log("✅ User đã được đồng bộ với Supabase:", data);
     }
   } catch (err) {
-    console.error("🚨 Lỗi khi sync user:", err);
+    console.error("🚨 Lỗi không mong đợi khi sync user:", err);
   }
 }
