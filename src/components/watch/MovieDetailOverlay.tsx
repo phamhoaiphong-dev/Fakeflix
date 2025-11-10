@@ -1,9 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Plus, ThumbsUp, X, Loader } from "lucide-react";
+import { Play, Plus, ThumbsUp, X, Loader, Heart } from "lucide-react";
 import { getMovieImage } from "src/utils/imageHelper";
 import { handlePlayClick } from "src/utils/playHelper";
 import { KKPhimDetailResponse } from "src/types/KKPhim";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useUser } from "@clerk/clerk-react";
+import supabase from "src/utils/supabase";
+import { handleFavoriteClick } from "src/hooks/useFavoritesAction";
+import { toast } from "react-hot-toast";
 
 interface MovieDetailModalProps {
   movie: KKPhimDetailResponse;
@@ -11,23 +15,64 @@ interface MovieDetailModalProps {
   onClose: () => void;
 }
 
-export default function MovieDetailModal({ movie, isOpen, onClose }: MovieDetailModalProps) {
+export default function MovieDetailModal({
+  movie,
+  isOpen,
+  onClose,
+}: MovieDetailModalProps) {
   if (!movie || !movie.movie) return null;
 
   const detail = movie.movie;
   const episodes = movie.episodes || [];
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // ✅ Favorite state
+  const { user } = useUser();
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  // ✅ Check if movie is already favorite
+  useEffect(() => {
+    const checkFavorite = async () => {
+      if (!user?.id || !detail?._id) return;
+      const { data } = await supabase
+        .from("user_movies")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("movie_id", detail._id)
+        .eq("relation_type", "favorite")
+        .maybeSingle();
+      setIsFavorite(!!data);
+    };
+    checkFavorite();
+  }, [user, detail]);
+
+  // ✅ Handle toggle favorite
+  const handleFavorites = async () => {
+    if (!user?.id) {
+      toast.error("Vui lòng đăng nhập để thêm vào danh sách yêu thích");
+      return;
+    }
+
+    const { added } = await handleFavoriteClick(user.id, {
+      id: detail._id,
+      title: detail.name,
+    });
+
+    setIsFavorite(added);
+    window.dispatchEvent(new Event("favoriteUpdated"));
+  };
+
+  // ✅ Handle play
   const handlePlay = async () => {
     if (!detail?.slug) {
-      console.warn('[MovieDetailModal] Missing slug');
-      alert('Không thể phát phim. Thông tin phim không đầy đủ.');
+      console.warn("[MovieDetailModal] Missing slug");
+      alert("Không thể phát phim. Thông tin phim không đầy đủ.");
       return;
     }
 
     const firstEpisode = episodes?.[0]?.server_data?.[0];
     if (!firstEpisode) {
-      alert('Phim này chưa có tập để phát.');
+      alert("Phim này chưa có tập để phát.");
       return;
     }
 
@@ -35,7 +80,7 @@ export default function MovieDetailModal({ movie, isOpen, onClose }: MovieDetail
     setTimeout(() => {
       const success = handlePlayClick({ slug: detail.slug, episode: firstEpisode });
       if (!success) {
-        alert('Không thể phát phim. Vui lòng thử lại.');
+        alert("Không thể phát phim. Vui lòng thử lại.");
         setIsPlaying(false);
       }
     }, 200);
@@ -56,7 +101,7 @@ export default function MovieDetailModal({ movie, isOpen, onClose }: MovieDetail
             initial={{ scale: 0.95, opacity: 0, y: 40 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 40 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
@@ -83,6 +128,7 @@ export default function MovieDetailModal({ movie, isOpen, onClose }: MovieDetail
                 </h1>
 
                 <div className="flex items-center gap-3 flex-wrap">
+                  {/* ▶️ Play */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -91,8 +137,8 @@ export default function MovieDetailModal({ movie, isOpen, onClose }: MovieDetail
                     disabled={isPlaying}
                     className={`flex items-center gap-2 text-lg font-semibold px-8 py-2.5 rounded-md transition ${
                       isPlaying
-                        ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                        : 'bg-white text-black hover:bg-gray-200'
+                        ? "bg-gray-500 text-gray-300 cursor-not-allowed"
+                        : "bg-white text-black hover:bg-gray-200"
                     }`}
                   >
                     {isPlaying ? (
@@ -106,11 +152,28 @@ export default function MovieDetailModal({ movie, isOpen, onClose }: MovieDetail
                     )}
                   </button>
 
+                  {/* ➕ Add to list */}
                   <button className="flex items-center justify-center w-11 h-11 rounded-full bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white transition">
                     <Plus size={24} />
                   </button>
-                  <button className="flex items-center justify-center w-11 h-11 rounded-full bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white transition">
-                    <ThumbsUp size={24} />
+
+                  {/* ❤️ Favorite toggle */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFavorites();
+                    }}
+                    className={`flex items-center justify-center w-11 h-11 rounded-full transition ${
+                      isFavorite
+                        ? "bg-red-600 hover:bg-red-700 text-white"
+                        : "bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white"
+                    }`}
+                    title={isFavorite ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
+                  >
+                    <Heart
+                      size={24}
+                      className={isFavorite ? "fill-current text-white" : ""}
+                    />
                   </button>
                 </div>
               </div>
