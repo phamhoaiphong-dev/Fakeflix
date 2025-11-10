@@ -5,6 +5,8 @@ import { getOptimizedImageUrl } from "src/utils/imageHelper";
 import MovieDetailModal from "src/components/watch/MovieDetailOverlay";
 import { getFavorites } from "src/hooks/useFavorites";
 import { useUser } from "@clerk/clerk-react";
+import { handlePlayClick } from "src/utils/playHelper";
+import MovieHoverCard from "src/components/MovieHoverCard";
 
 interface Favorite {
   id: number;
@@ -59,10 +61,10 @@ export default function FavoritesPage() {
           try {
             const res = await fetch(`https://phimapi.com/phim/${fav.movie_id}`);
             const data = await res.json();
-            
+
             // Debug log
             console.log(`Fetching ${fav.movie_id}:`, data);
-            
+
             if (data.status && data.movie) {
               detailMap[fav.movie_id] = data.movie;
             } else {
@@ -146,8 +148,18 @@ export default function FavoritesPage() {
     hoverTimeout.current = setTimeout(() => setHoveredId(null), 400);
   };
 
-  const handlePlayClick = (slug: string) => {
-    console.log("Play movie:", slug);
+  const handlePlay = (movieSlug: string, detail?: any) => {
+    const firstEpisode = detail?.episodes?.[0]?.server_data?.[0];
+    handlePlayClick({
+      slug: movieSlug,
+      episode: firstEpisode
+        ? {
+          slug: firstEpisode.slug,
+          name: firstEpisode.name,
+          server_name: firstEpisode.server_name,
+        }
+        : undefined,
+    });
   };
 
   const handleMoreInfo = async (movieSlug: string) => {
@@ -183,8 +195,8 @@ export default function FavoritesPage() {
     hoverPosition === "left"
       ? "left-0"
       : hoverPosition === "right"
-      ? "right-0"
-      : "left-1/2 -translate-x-1/2";
+        ? "right-0"
+        : "left-1/2 -translate-x-1/2";
 
   // ✅ UI
   return (
@@ -251,7 +263,7 @@ export default function FavoritesPage() {
                             </span>
                           </div>
                         )}
-                        
+
                         {/* Quality badge */}
                         {detail?.quality && (
                           <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 rounded text-xs font-semibold">
@@ -263,91 +275,20 @@ export default function FavoritesPage() {
 
                     {/* Hover Card */}
                     <AnimatePresence>
-                      {isHovered && !isModalOpen && (
-                        <motion.div
-                          key="hover-card"
-                          initial={{ opacity: 0, scale: 0.85, y: 30 }}
-                          animate={{ opacity: 1, scale: 1, y: -10 }}
-                          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                          transition={{ duration: 0.35, ease: "easeOut" }}
-                          className={`absolute top-[-100px] ${getHoverPositionClass()} z-[100] w-[320px] bg-neutral-900 rounded-xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.85)] pointer-events-auto`}
-                        >
-                          {/* Banner */}
-                          <div className="relative w-full h-[180px] overflow-hidden">
-                            {thumb ? (
-                              <motion.img
-                                src={thumb}
-                                alt={name}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
-                                <span className="text-gray-500">{name}</span>
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-
-                            {/* Quality badge on hover card */}
-                            {detail?.quality && (
-                              <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 rounded text-xs font-bold">
-                                {detail.quality}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Info */}
-                          <div className="p-3 space-y-2">
-                            <h3 className="text-white font-semibold text-base line-clamp-1">
-                              {name}
-                            </h3>
-
-                            <div className="flex gap-2 items-center text-gray-400 text-sm flex-wrap">
-                              {detail?.year && <span>{detail.year}</span>}
-                              {detail?.episode_total && <span>• {detail.episode_total}</span>}
-                              {detail?.episode_current && (
-                                <span className="text-green-500 text-xs">• {detail.episode_current}</span>
-                              )}
-                            </div>
-
-                            {detail?.origin_name && (
-                              <p className="text-xs text-gray-500 line-clamp-1">{detail.origin_name}</p>
-                            )}
-
-                            <div className="flex items-center justify-between mt-3">
-                              <div className="flex gap-2">
-                                <motion.button
-                                  whileTap={{ scale: 0.9 }}
-                                  onClick={() => handlePlayClick(detail?.slug || fav.movie_id)}
-                                  className="w-8 h-8 bg-white rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-                                >
-                                  <Play className="w-4 h-4 text-black" fill="currentColor" />
-                                </motion.button>
-                                <motion.button
-                                  whileTap={{ scale: 0.9 }}
-                                  className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </motion.button>
-                                <motion.button
-                                  whileTap={{ scale: 0.9 }}
-                                  className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-                                >
-                                  <ThumbsUp className="w-4 h-4" />
-                                </motion.button>
-                              </div>
-
-                              <motion.button
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => handleMoreInfo(detail?.slug || fav.movie_id)}
-                                className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-                              >
-                                <ChevronDown className="w-4 h-4" />
-                              </motion.button>
-                            </div>
-                          </div>
-                        </motion.div>
+                      {isHovered && detail && (
+                        <MovieHoverCard
+                          movie={detail}
+                          movieDetail={detail}
+                          isLoading={!detail}
+                          hoverPosition={hoverPosition}
+                          onPlay={() => handlePlay(detail.slug, detail)}
+                          onMoreInfo={() => handleMoreInfo(detail.slug)}
+                          onMouseEnter={() => hoverTimeout.current && clearTimeout(hoverTimeout.current)}
+                          onMouseLeave={handleMouseLeave}
+                        />
                       )}
                     </AnimatePresence>
+
                   </div>
                 );
               })}
@@ -389,11 +330,10 @@ export default function FavoritesPage() {
                           setPage(pageNum);
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
-                        className={`w-10 h-10 rounded-lg font-medium transition-all ${
-                          page === pageNum
-                            ? 'bg-red-600 text-white'
-                            : 'bg-neutral-800 text-gray-300 hover:bg-neutral-700'
-                        }`}
+                        className={`w-10 h-10 rounded-lg font-medium transition-all ${page === pageNum
+                          ? 'bg-red-600 text-white'
+                          : 'bg-neutral-800 text-gray-300 hover:bg-neutral-700'
+                          }`}
                       >
                         {pageNum}
                       </motion.button>
