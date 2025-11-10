@@ -1,13 +1,25 @@
 import supabase from "src/utils/supabase";
 import { toast } from "react-hot-toast";
 
-export async function handleFavoriteClick(userId: string, movie: { id: string; title: string }) {
+export async function handleFavoriteClick(
+  userId: string, 
+  movie: { 
+    id?: string; 
+    slug: string; 
+    title: string;
+    name?: string;
+  }
+) {
   try {
+    // ✅ Sử dụng slug thay vì id
+    const movieSlug = movie.slug;
+    const movieName = movie.title || movie.name || "Unknown";
+
     const { data: existing } = await supabase
       .from("user_movies")
       .select("id")
       .eq("user_id", userId)
-      .eq("movie_id", movie?.id)
+      .eq("movie_id", movieSlug) // ✅ Dùng slug
       .eq("relation_type", "favorite")
       .maybeSingle();
 
@@ -19,8 +31,8 @@ export async function handleFavoriteClick(userId: string, movie: { id: string; t
     } else {
       await supabase.from("user_movies").insert({
         user_id: userId,
-        movie_id: movie.id,
-        movie_name: movie.title,
+        movie_id: movieSlug, // ✅ Lưu slug thay vì id
+        movie_name: movieName,
         relation_type: "favorite",
       });
       toast.success("Đã thêm vào danh sách yêu thích ❤️");

@@ -61,7 +61,7 @@ export default function DetailModal() {
     }
 
     const { added } = await handleFavoriteClick(user.id, {
-      id: movie!._id,
+      slug: movie!.slug,
       title: movie!.name,
     });
 
