@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import PlayerControlButton from "./PlayerControlButton";
 import PlayButton from "./PlayButton";
@@ -11,7 +11,12 @@ import { useDetailModal } from "src/providers/DetailModalProvider";
 import { useSimilarVideos } from "src/hooks/useSimilarVideos";
 import { KKPhimDetailResponse, KKPhimMovie } from "src/types/KKPhim";
 import { useNavigate } from "react-router-dom";
-
+//favorites imports
+import { useUser } from "@clerk/clerk-react";
+import { toast } from "react-hot-toast";
+import supabase from "src/utils/supabase";
+import { handleFavoriteClick } from "src/hooks/useFavoritesAction";
+//likes 
 export default function DetailModal() {
   const { detail, setDetailType } = useDetailModal();
   const navigate = useNavigate();
@@ -30,6 +35,39 @@ export default function DetailModal() {
 
   const playerRef = useRef<any>(null);
   const [muted, setMuted] = useState(true);
+  const { user } = useUser();
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    const checkFavorite = async () => {
+      if (!user?.id || !movie?._id) return;
+      const { data } = await supabase
+        .from("user_movies")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("movie_id", movie._id)
+        .eq("relation_type", "favorite")
+        .maybeSingle();
+      setIsFavorite(!!data);
+    };
+    checkFavorite();
+  }, [user, movie]);
+
+
+  const handleFavorites = async () => {
+    if (!user?.id) {
+      toast.error("Vui lòng đăng nhập để thêm vào danh sách yêu thích");
+      return;
+    }
+
+    const { added } = await handleFavoriteClick(user.id, {
+      id: movie!._id,
+      title: movie!.name,
+    });
+
+    setIsFavorite(added);
+    window.dispatchEvent(new Event("favoriteUpdated"));
+  };
 
   const handleReady = useCallback((player: any) => {
     playerRef.current = player;
@@ -67,7 +105,7 @@ export default function DetailModal() {
             >
               ✕
             </button>
-          
+
             {/* Movie Info */}
             <div className="px-4 sm:px-6 md:px-10 mt-4">
               <MaxLineTypography maxLine={1} className="text-2xl sm:text-3xl font-bold text-white mb-2">
@@ -81,7 +119,7 @@ export default function DetailModal() {
                   {/* Add Icon */}
                   +
                 </PlayerControlButton>
-                <PlayerControlButton>
+                <PlayerControlButton onClick={handleFavorites}>
                   {/* ThumbUp Icon */}
                   👍
                 </PlayerControlButton>

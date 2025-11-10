@@ -4,7 +4,9 @@ import { Play, ChevronDown, ChevronLeft, ChevronRight, ThumbsUp } from "lucide-r
 import { getOptimizedImageUrl } from "src/utils/imageHelper";
 import MovieDetailModal from "src/components/watch/MovieDetailOverlay";
 import { getFavorites } from "src/hooks/useFavorites";
-import { useUser } from "@clerk/clerk-react"; 
+import { useUser } from "@clerk/clerk-react";
+import { handleFavoriteClick } from "src/hooks/useFavoritesAction";
+
 
 interface Favorite {
   id: number;
@@ -37,6 +39,7 @@ export default function FavoritesPage() {
   const [movieDetails, setMovieDetails] = useState<Record<string, MovieDetail>>({});
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
+  const fetchingRef = useRef<Record<string, boolean>>({});
 
   const MOVIES_PER_PAGE = 18;
 
@@ -50,6 +53,9 @@ export default function FavoritesPage() {
       setLoading(false);
     };
     fetchFavorites();
+    const handleUpdate = () => fetchFavorites();
+    window.addEventListener("favoriteUpdated", handleUpdate);
+    return () => window.removeEventListener("favoriteUpdated", handleUpdate);
   }, [user]);
 
   // ✅ Pagination logic
@@ -64,19 +70,19 @@ export default function FavoritesPage() {
 
   // ✅ Fetch movie details when hovering
   useEffect(() => {
-    if (hoveredId && !movieDetails[hoveredId]) {
-      fetch(`https://phimapi.com/phim/${hoveredId}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.status === true && data.movie) {
-            setMovieDetails((prev) => ({
-              ...prev,
-              [hoveredId]: data.movie,
-            }));
-          }
-        })
-        .catch((err) => console.error("Error fetching movie detail:", err));
-    }
+    if (!hoveredId || movieDetails[hoveredId] || fetchingRef.current[hoveredId]) return;
+    fetchingRef.current[hoveredId] = true;
+    fetch(`https://phimapi.com/phim/${hoveredId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status && data.movie) {
+          setMovieDetails(prev => ({ ...prev, [hoveredId]: data.movie }));
+        }
+      })
+      .catch(console.error)
+      .finally(() => {
+        fetchingRef.current[hoveredId] = false;
+      });
   }, [hoveredId, movieDetails]);
 
   const handlePlayClick = (slug: string) => {
@@ -136,8 +142,8 @@ export default function FavoritesPage() {
     return hoverPosition === "left"
       ? "left-0"
       : hoverPosition === "right"
-      ? "right-0"
-      : "left-1/2 -translate-x-1/2";
+        ? "right-0"
+        : "left-1/2 -translate-x-1/2";
   };
 
   return (
