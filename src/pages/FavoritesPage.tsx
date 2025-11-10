@@ -1,11 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, ChevronDown, ChevronLeft, ChevronRight, ThumbsUp } from "lucide-react";
+import { Play, ChevronDown, ChevronLeft, ChevronRight, ThumbsUp, Plus } from "lucide-react";
 import { getOptimizedImageUrl } from "src/utils/imageHelper";
 import MovieDetailModal from "src/components/watch/MovieDetailOverlay";
 import { getFavorites } from "src/hooks/useFavorites";
 import { useUser } from "@clerk/clerk-react";
-import { handleFavoriteClick } from "src/hooks/useFavoritesAction";
 
 interface Favorite {
   id: number;
@@ -15,6 +14,7 @@ interface Favorite {
 }
 
 interface MovieDetail {
+  _id?: string;
   name: string;
   thumb_url: string;
   slug: string;
@@ -49,31 +49,53 @@ export default function FavoritesPage() {
 
     const fetchFavorites = async () => {
       setLoading(true);
-      const favs = await getFavorites(user.id);
-      setFavorites(favs || []);
-      setLoading(false);
+      try {
+        const favs = await getFavorites(user.id);
+        setFavorites(favs || []);
 
-      // Fetch movie details for each favorite
-      const detailMap: Record<string, MovieDetail> = {};
-      await Promise.all(
-        (favs || []).map(async (fav) => {
+        // Fetch movie details for each favorite
+        const detailMap: Record<string, MovieDetail> = {};
+        const fetchPromises = (favs || []).map(async (fav) => {
           try {
             const res = await fetch(`https://phimapi.com/phim/${fav.movie_id}`);
             const data = await res.json();
+            
+            // Debug log
+            console.log(`Fetching ${fav.movie_id}:`, data);
+            
             if (data.status && data.movie) {
               detailMap[fav.movie_id] = data.movie;
+            } else {
+              // Fallback: create minimal detail from favorite data
+              detailMap[fav.movie_id] = {
+                name: fav.movie_name,
+                thumb_url: "",
+                slug: fav.movie_id,
+              };
             }
           } catch (err) {
-            console.warn("Không thể tải thông tin phim:", fav.movie_id);
+            console.warn("Không thể tải thông tin phim:", fav.movie_id, err);
+            // Fallback
+            detailMap[fav.movie_id] = {
+              name: fav.movie_name,
+              thumb_url: "",
+              slug: fav.movie_id,
+            };
           }
-        })
-      );
-      setMovieDetails(detailMap);
+        });
+
+        await Promise.all(fetchPromises);
+        setMovieDetails(detailMap);
+      } catch (error) {
+        console.error("Error loading favorites:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchFavorites();
 
-    // listen for update
+    // Listen for update
     const handleUpdate = () => fetchFavorites();
     window.addEventListener("favoriteUpdated", handleUpdate);
     return () => window.removeEventListener("favoriteUpdated", handleUpdate);
@@ -89,7 +111,7 @@ export default function FavoritesPage() {
     setTotalPages(Math.ceil(favorites.length / MOVIES_PER_PAGE));
   }, [favorites]);
 
-  // Hover effect (optional fetch update)
+  // Hover effect
   useEffect(() => {
     if (!hoveredId || movieDetails[hoveredId] || fetchingRef.current[hoveredId]) return;
     fetchingRef.current[hoveredId] = true;
@@ -144,11 +166,17 @@ export default function FavoritesPage() {
   };
 
   const handlePrevPage = () => {
-    if (page > 1) setPage((p) => p - 1);
+    if (page > 1) {
+      setPage((p) => p - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleNextPage = () => {
-    if (page < totalPages) setPage((p) => p + 1);
+    if (page < totalPages) {
+      setPage((p) => p + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const getHoverPositionClass = () =>
@@ -165,7 +193,7 @@ export default function FavoritesPage() {
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">Danh Sách Yêu Thích</h1>
           <p className="text-gray-400 text-sm">
-            Trang {page} / {totalPages}
+            {favorites.length > 0 ? `${favorites.length} phim • Trang ${page} / ${totalPages}` : 'Chưa có phim yêu thích'}
           </p>
         </div>
 
@@ -177,16 +205,21 @@ export default function FavoritesPage() {
             </div>
           </div>
         ) : paginatedFavorites.length === 0 ? (
-          <p className="text-center text-gray-400 py-20">
-            Bạn chưa thêm phim nào vào danh sách yêu thích.
-          </p>
+          <div className="text-center py-20">
+            <p className="text-gray-400 text-lg mb-4">
+              Bạn chưa thêm phim nào vào danh sách yêu thích.
+            </p>
+            <p className="text-gray-500 text-sm">
+              Nhấn vào biểu tượng ❤️ trên phim để thêm vào danh sách này
+            </p>
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 md:gap-4 lg:gap-5">
               {paginatedFavorites.map((fav) => {
                 const detail = movieDetails[fav.movie_id];
                 const name = detail?.name || fav.movie_name;
-                const thumb = getOptimizedImageUrl(detail?.thumb_url || "");
+                const thumb = detail?.thumb_url ? getOptimizedImageUrl(detail.thumb_url) : "";
                 const isHovered = hoveredId === fav.movie_id;
 
                 return (
@@ -197,18 +230,29 @@ export default function FavoritesPage() {
                     onMouseEnter={() => handleMouseEnter(fav.movie_id)}
                     onMouseLeave={handleMouseLeave}
                   >
+                    {/* Poster */}
                     <motion.div
                       className="relative rounded-lg overflow-hidden bg-neutral-900 shadow-lg"
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.3 }}
                     >
                       <div className="relative aspect-[2/3] w-full">
-                        <img
-                          src={thumb}
-                          alt={name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
+                        {thumb ? (
+                          <img
+                            src={thumb}
+                            alt={name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
+                            <span className="text-gray-500 text-sm text-center px-2">
+                              {name}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Quality badge */}
                         {detail?.quality && (
                           <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 rounded text-xs font-semibold">
                             {detail.quality}
@@ -219,31 +263,55 @@ export default function FavoritesPage() {
 
                     {/* Hover Card */}
                     <AnimatePresence>
-                      {isHovered && (
+                      {isHovered && !isModalOpen && (
                         <motion.div
                           key="hover-card"
                           initial={{ opacity: 0, scale: 0.85, y: 30 }}
                           animate={{ opacity: 1, scale: 1, y: -10 }}
                           exit={{ opacity: 0, scale: 0.9, y: 20 }}
                           transition={{ duration: 0.35, ease: "easeOut" }}
-                          className={`absolute top-[-100px] ${getHoverPositionClass()} z-[100] w-[320px] bg-neutral-900 rounded-xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.85)]`}
+                          className={`absolute top-[-100px] ${getHoverPositionClass()} z-[100] w-[320px] bg-neutral-900 rounded-xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.85)] pointer-events-auto`}
                         >
+                          {/* Banner */}
                           <div className="relative w-full h-[180px] overflow-hidden">
-                            <motion.img
-                              src={thumb}
-                              alt={name}
-                              className="w-full h-full object-cover"
-                            />
+                            {thumb ? (
+                              <motion.img
+                                src={thumb}
+                                alt={name}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
+                                <span className="text-gray-500">{name}</span>
+                              </div>
+                            )}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+                            {/* Quality badge on hover card */}
+                            {detail?.quality && (
+                              <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 rounded text-xs font-bold">
+                                {detail.quality}
+                              </div>
+                            )}
                           </div>
 
+                          {/* Info */}
                           <div className="p-3 space-y-2">
                             <h3 className="text-white font-semibold text-base line-clamp-1">
                               {name}
                             </h3>
-                            <p className="text-gray-400 text-sm">
-                              {detail?.year || "N/A"}
-                            </p>
+
+                            <div className="flex gap-2 items-center text-gray-400 text-sm flex-wrap">
+                              {detail?.year && <span>{detail.year}</span>}
+                              {detail?.episode_total && <span>• {detail.episode_total}</span>}
+                              {detail?.episode_current && (
+                                <span className="text-green-500 text-xs">• {detail.episode_current}</span>
+                              )}
+                            </div>
+
+                            {detail?.origin_name && (
+                              <p className="text-xs text-gray-500 line-clamp-1">{detail.origin_name}</p>
+                            )}
 
                             <div className="flex items-center justify-between mt-3">
                               <div className="flex gap-2">
@@ -254,7 +322,12 @@ export default function FavoritesPage() {
                                 >
                                   <Play className="w-4 h-4 text-black" fill="currentColor" />
                                 </motion.button>
-
+                                <motion.button
+                                  whileTap={{ scale: 0.9 }}
+                                  className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </motion.button>
                                 <motion.button
                                   whileTap={{ scale: 0.9 }}
                                   className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors"
@@ -293,6 +366,40 @@ export default function FavoritesPage() {
                   <ChevronLeft className="w-4 h-4" />
                   Trang trước
                 </motion.button>
+
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number = 1;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+
+                    return (
+                      <motion.button
+                        key={pageNum}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setPage(pageNum);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                          page === pageNum
+                            ? 'bg-red-600 text-white'
+                            : 'bg-neutral-800 text-gray-300 hover:bg-neutral-700'
+                        }`}
+                      >
+                        {pageNum}
+                      </motion.button>
+                    );
+                  })}
+                </div>
 
                 <motion.button
                   whileHover={{ scale: 1.05 }}
