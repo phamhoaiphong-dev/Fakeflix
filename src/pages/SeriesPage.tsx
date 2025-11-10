@@ -5,6 +5,7 @@ import { Play, ChevronDown, ChevronLeft, ChevronRight, Plus, ThumbsUp } from "lu
 import { getOptimizedImageUrl } from "src/utils/imageHelper";
 import { handlePlayClick } from "src/utils/playHelper";
 import MovieDetailModal from "src/components/watch/MovieDetailOverlay";
+import MovieHoverCard from "src/components/MovieHoverCard";
 
 interface Movie {
     _id: string;
@@ -95,6 +96,20 @@ export default function SeriesPage() {
             }
         }
     }, [hoveredId, movieDetails, movies]);
+
+    const handlePlay = (movieSlug: string, detail?: any) => {
+        const firstEpisode = detail?.episodes?.[0]?.server_data?.[0];
+        handlePlayClick({
+            slug: movieSlug,
+            episode: firstEpisode
+                ? {
+                    slug: firstEpisode.slug,
+                    name: firstEpisode.name,
+                    server_name: firstEpisode.server_name,
+                }
+                : undefined,
+        });
+    };
 
     const handleMouseEnter = (movieId: string) => {
         const cardElement = cardRefs.current[movieId];
@@ -222,76 +237,17 @@ export default function SeriesPage() {
 
                                         {/* Hover Card */}
                                         <AnimatePresence>
-                                            {isHovered && !isModalOpen && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, scale: 0.85, y: 30 }}
-                                                    animate={{ opacity: 1, scale: 1, y: -10 }}
-                                                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                                    transition={{ duration: 0.35, ease: "easeOut" }}
-                                                    className={`absolute top-[-100px] ${getHoverPositionClass()} z-[100] w-[320px] bg-neutral-900 rounded-xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.85)] pointer-events-auto`}
-                                                >
-                                                    <div className="relative w-full h-[180px] overflow-hidden">
-                                                        <motion.img
-                                                            src={getOptimizedImageUrl(movie.thumb_url)}
-                                                            alt={movie.name}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-                                                        {movie.quality && (
-                                                            <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 rounded text-xs font-bold">
-                                                                {movie.quality}
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="p-3 space-y-2">
-                                                        <h3 className="text-white font-semibold text-base line-clamp-1">
-                                                            {detail.name}
-                                                        </h3>
-
-                                                        <div className="flex gap-2 items-center text-gray-400 text-sm flex-wrap">
-                                                            {detail.year && <span>{detail.year}</span>}
-                                                            {detail.episode_current && <span>• {detail.episode_current}</span>}
-                                                            {detail.lang && <span>• {detail.lang}</span>}
-                                                        </div>
-
-                                                        {detail.origin_name && (
-                                                            <p className="text-xs text-gray-500 line-clamp-1">{detail.origin_name}</p>
-                                                        )}
-
-                                                        <div className="flex items-center justify-between mt-3">
-                                                            <div className="flex gap-2">
-                                                                <motion.button
-                                                                    whileTap={{ scale: 0.9 }}
-                                                                    onClick={() => handlePlayClick({ slug: movie.slug })}
-                                                                    className="w-8 h-8 bg-white rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-                                                                >
-                                                                    <Play className="w-4 h-4 text-black" fill="currentColor" />
-                                                                </motion.button>
-                                                                <motion.button
-                                                                    whileTap={{ scale: 0.9 }}
-                                                                    className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10"
-                                                                >
-                                                                    <Plus className="w-4 h-4" />
-                                                                </motion.button>
-                                                                <motion.button
-                                                                    whileTap={{ scale: 0.9 }}
-                                                                    className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10"
-                                                                >
-                                                                    <ThumbsUp className="w-4 h-4" />
-                                                                </motion.button>
-                                                            </div>
-
-                                                            <motion.button
-                                                                whileTap={{ scale: 0.9 }}
-                                                                onClick={() => handleMoreInfo(movie.slug)}
-                                                                className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10"
-                                                            >
-                                                                <ChevronDown className="w-4 h-4" />
-                                                            </motion.button>
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
+                                            {isHovered && (
+                                                <MovieHoverCard
+                                                    movie={movie}
+                                                    movieDetail={movieDetails[movie._id]}
+                                                    isLoading={!movieDetails[movie._id]}
+                                                    hoverPosition={hoverPosition}
+                                                    onPlay={() => handlePlay(movie.slug, movieDetails[movie._id])}
+                                                    onMoreInfo={() => handleMoreInfo(movie.slug)}
+                                                    onMouseEnter={() => hoverTimeout.current && clearTimeout(hoverTimeout.current)}
+                                                    onMouseLeave={handleMouseLeave}
+                                                />
                                             )}
                                         </AnimatePresence>
                                     </div>
