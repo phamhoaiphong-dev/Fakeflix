@@ -7,7 +7,6 @@ import { getFavorites } from "src/hooks/useFavorites";
 import { useUser } from "@clerk/clerk-react";
 import { handleFavoriteClick } from "src/hooks/useFavoritesAction";
 
-
 interface Favorite {
   id: number;
   movie_id: string;
@@ -29,36 +28,58 @@ interface MovieDetail {
 export default function FavoritesPage() {
   const { user } = useUser();
   const [favorites, setFavorites] = useState<Favorite[]>([]);
+  const [movieDetails, setMovieDetails] = useState<Record<string, MovieDetail>>({});
+  const [loading, setLoading] = useState<boolean>(false);
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [selectedMovie, setSelectedMovie] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hoverPosition, setHoverPosition] = useState<"left" | "center" | "right">("center");
-  const [movieDetails, setMovieDetails] = useState<Record<string, MovieDetail>>({});
+  const [selectedMovie, setSelectedMovie] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const fetchingRef = useRef<Record<string, boolean>>({});
 
   const MOVIES_PER_PAGE = 18;
 
-  // ✅ Fetch favorites from Supabase
+  // ✅ Load favorites and details
   useEffect(() => {
     if (!user?.id) return;
+
     const fetchFavorites = async () => {
       setLoading(true);
       const favs = await getFavorites(user.id);
       setFavorites(favs || []);
       setLoading(false);
+
+      // Fetch movie details for each favorite
+      const detailMap: Record<string, MovieDetail> = {};
+      await Promise.all(
+        (favs || []).map(async (fav) => {
+          try {
+            const res = await fetch(`https://phimapi.com/phim/${fav.movie_id}`);
+            const data = await res.json();
+            if (data.status && data.movie) {
+              detailMap[fav.movie_id] = data.movie;
+            }
+          } catch (err) {
+            console.warn("Không thể tải thông tin phim:", fav.movie_id);
+          }
+        })
+      );
+      setMovieDetails(detailMap);
     };
+
     fetchFavorites();
+
+    // listen for update
     const handleUpdate = () => fetchFavorites();
     window.addEventListener("favoriteUpdated", handleUpdate);
     return () => window.removeEventListener("favoriteUpdated", handleUpdate);
   }, [user]);
 
-  // ✅ Pagination logic
+  // Pagination
   const paginatedFavorites = favorites.slice(
     (page - 1) * MOVIES_PER_PAGE,
     page * MOVIES_PER_PAGE
@@ -68,15 +89,15 @@ export default function FavoritesPage() {
     setTotalPages(Math.ceil(favorites.length / MOVIES_PER_PAGE));
   }, [favorites]);
 
-  // ✅ Fetch movie details when hovering
+  // Hover effect (optional fetch update)
   useEffect(() => {
     if (!hoveredId || movieDetails[hoveredId] || fetchingRef.current[hoveredId]) return;
     fetchingRef.current[hoveredId] = true;
     fetch(`https://phimapi.com/phim/${hoveredId}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.status && data.movie) {
-          setMovieDetails(prev => ({ ...prev, [hoveredId]: data.movie }));
+          setMovieDetails((prev) => ({ ...prev, [hoveredId]: data.movie }));
         }
       })
       .catch(console.error)
@@ -84,10 +105,6 @@ export default function FavoritesPage() {
         fetchingRef.current[hoveredId] = false;
       });
   }, [hoveredId, movieDetails]);
-
-  const handlePlayClick = (slug: string) => {
-    console.log("Play movie:", slug);
-  };
 
   const handleMouseEnter = (movieId: string) => {
     const cardElement = cardRefs.current[movieId];
@@ -104,9 +121,11 @@ export default function FavoritesPage() {
   };
 
   const handleMouseLeave = () => {
-    hoverTimeout.current = setTimeout(() => {
-      setHoveredId(null);
-    }, 400);
+    hoverTimeout.current = setTimeout(() => setHoveredId(null), 400);
+  };
+
+  const handlePlayClick = (slug: string) => {
+    console.log("Play movie:", slug);
   };
 
   const handleMoreInfo = async (movieSlug: string) => {
@@ -125,27 +144,21 @@ export default function FavoritesPage() {
   };
 
   const handlePrevPage = () => {
-    if (page > 1) {
-      setPage(page - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    if (page > 1) setPage((p) => p - 1);
   };
 
   const handleNextPage = () => {
-    if (page < totalPages) {
-      setPage(page + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    if (page < totalPages) setPage((p) => p + 1);
   };
 
-  const getHoverPositionClass = () => {
-    return hoverPosition === "left"
+  const getHoverPositionClass = () =>
+    hoverPosition === "left"
       ? "left-0"
       : hoverPosition === "right"
-        ? "right-0"
-        : "left-1/2 -translate-x-1/2";
-  };
+      ? "right-0"
+      : "left-1/2 -translate-x-1/2";
 
+  // ✅ UI
   return (
     <div className="min-h-screen bg-black text-white pt-[70px]">
       <div className="max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -172,7 +185,7 @@ export default function FavoritesPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 md:gap-4 lg:gap-5">
               {paginatedFavorites.map((fav) => {
                 const detail = movieDetails[fav.movie_id];
-                const name = fav.movie_name || detail?.name || "Phim không rõ";
+                const name = detail?.name || fav.movie_name;
                 const thumb = getOptimizedImageUrl(detail?.thumb_url || "");
                 const isHovered = hoveredId === fav.movie_id;
 
@@ -196,12 +209,15 @@ export default function FavoritesPage() {
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
-                        <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 rounded text-xs font-semibold">
-                          Yêu thích
-                        </div>
+                        {detail?.quality && (
+                          <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 rounded text-xs font-semibold">
+                            {detail.quality}
+                          </div>
+                        )}
                       </div>
                     </motion.div>
 
+                    {/* Hover Card */}
                     <AnimatePresence>
                       {isHovered && (
                         <motion.div
@@ -233,9 +249,7 @@ export default function FavoritesPage() {
                               <div className="flex gap-2">
                                 <motion.button
                                   whileTap={{ scale: 0.9 }}
-                                  onClick={() =>
-                                    handlePlayClick(detail?.slug || fav.movie_id)
-                                  }
+                                  onClick={() => handlePlayClick(detail?.slug || fav.movie_id)}
                                   className="w-8 h-8 bg-white rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
                                 >
                                   <Play className="w-4 h-4 text-black" fill="currentColor" />
@@ -251,9 +265,7 @@ export default function FavoritesPage() {
 
                               <motion.button
                                 whileTap={{ scale: 0.9 }}
-                                onClick={() =>
-                                  handleMoreInfo(detail?.slug || fav.movie_id)
-                                }
+                                onClick={() => handleMoreInfo(detail?.slug || fav.movie_id)}
                                 className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors"
                               >
                                 <ChevronDown className="w-4 h-4" />
@@ -268,7 +280,7 @@ export default function FavoritesPage() {
               })}
             </div>
 
-            {/* ✅ Pagination */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-3 mt-12 mb-8">
                 <motion.button
