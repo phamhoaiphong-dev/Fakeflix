@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Play, ChevronDown, ChevronLeft, ChevronRight, ThumbsUp, Plus } from "lucide-react";
 import { getOptimizedImageUrl } from "src/utils/imageHelper";
 import MovieDetailModal from "src/components/watch/MovieDetailOverlay";
-import { getFavorites } from "src/hooks/useFavorites";
+import { getFavorites, useFavorites } from "src/hooks/useFavorites";
 import { useUser } from "@clerk/clerk-react";
 import { handlePlayClick } from "src/utils/playHelper";
 import MovieHoverCard from "src/components/MovieHoverCard";
+import supabase from "src/utils/supabase";
+import toast from "react-hot-toast";
 
 interface Favorite {
   id: number;
@@ -42,6 +44,14 @@ export default function FavoritesPage() {
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const fetchingRef = useRef<Record<string, boolean>>({});
+
+  // STATE FOR DELETE HOVER EFFECT
+  const [hoveringDeleteBtn, setHoveringDeleteBtn] = useState(false);
+  // State for confirm delete 
+  const [confirmDeleteFor, setConfirmDeleteFor] = useState<string | null>(null);
+  // State for disable hover card
+  const [disableHoverCard, setDisableHoverCard] = useState(false);
+
 
   const MOVIES_PER_PAGE = 18;
 
@@ -198,6 +208,29 @@ export default function FavoritesPage() {
         ? "right-0"
         : "left-1/2 -translate-x-1/2";
 
+
+  const removeFavorite = async (movieSlug: string) => {
+    if (!user?.id) return;
+
+    const { data: existing } = await supabase
+      .from("user_movies")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("movie_id", movieSlug)
+      .eq("relation_type", "favorite")
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from("user_movies").delete().eq("id", existing.id);
+
+      setFavorites((prev) => prev.filter((f) => f.movie_id !== movieSlug));
+
+      toast.error("Đã xóa khỏi yêu thích ❌");
+      window.dispatchEvent(new Event("favoriteUpdated"));
+    }
+  };
+
+
   // ✅ UI
   return (
     <div className="min-h-screen bg-black text-white pt-[70px]">
@@ -233,7 +266,6 @@ export default function FavoritesPage() {
                 const name = detail?.name || fav.movie_name;
                 const thumb = detail?.thumb_url ? getOptimizedImageUrl(detail.thumb_url) : "";
                 const isHovered = hoveredId === fav.movie_id;
-
                 return (
                   <div
                     key={fav.movie_id}
@@ -249,6 +281,75 @@ export default function FavoritesPage() {
                       transition={{ duration: 0.3 }}
                     >
                       <div className="relative aspect-[2/3] w-full">
+                        {/* Nút X xoá */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDisableHoverCard(true);
+                            setConfirmDeleteFor(
+                              confirmDeleteFor === fav.movie_id ? null : fav.movie_id
+                            );
+                          }}
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            setDisableHoverCard(true);
+                          }}
+                          onMouseLeave={() => {
+                            if (!confirmDeleteFor) setDisableHoverCard(false);
+                          }}
+                          className="
+                            absolute top-2 left-2
+                            w-8 h-8 flex items-center justify-center
+                            bg-black/60 hover:bg-black/80
+                            rounded-full backdrop-blur-sm
+                            text-white z-50 cursor-pointer
+                          "
+                        >
+                          ✕
+                        </button>
+
+
+                        {/* Popup xác nhận xoá */}
+                        {confirmDeleteFor === fav.movie_id && (
+                          <div
+                            className="
+                              absolute top-12 left-2
+                              bg-black/80 backdrop-blur-md
+                              p-3 rounded-lg shadow-lg
+                              text-sm text-white
+                              z-50
+                            "
+                            onMouseEnter={() => setDisableHoverCard(true)}
+                            onMouseLeave={() => {
+                              setConfirmDeleteFor(null);
+                              setDisableHoverCard(false);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <p className="mb-2">Bạn có chắc muốn xoá?</p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  removeFavorite(fav.movie_id);
+                                  setConfirmDeleteFor(null);
+                                  setDisableHoverCard(false);
+                                }}
+                                className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs"
+                              >
+                                Xoá
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setConfirmDeleteFor(null);
+                                  setDisableHoverCard(false);
+                                }}
+                                className="bg-neutral-700 hover:bg-neutral-600 px-3 py-1 rounded text-xs"
+                              >
+                                Hủy
+                              </button>
+                            </div>
+                          </div>
+                        )}
                         {thumb ? (
                           <img
                             src={thumb}
@@ -275,7 +376,7 @@ export default function FavoritesPage() {
 
                     {/* Hover Card */}
                     <AnimatePresence>
-                      {isHovered && detail && (
+                      {isHovered && !disableHoverCard && detail && (
                         <MovieHoverCard
                           movie={detail}
                           movieDetail={detail}
@@ -288,7 +389,6 @@ export default function FavoritesPage() {
                         />
                       )}
                     </AnimatePresence>
-
                   </div>
                 );
               })}

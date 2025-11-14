@@ -15,7 +15,8 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { toast } from "react-hot-toast";
 import supabase from "src/utils/supabase";
-import { handleFavoriteClick } from "src/hooks/useFavoritesAction";
+import { useFavorites } from "src/hooks/useFavorites";
+
 //likes 
 export default function DetailModal() {
   const { detail, setDetailType } = useDetailModal();
@@ -36,23 +37,7 @@ export default function DetailModal() {
   const playerRef = useRef<any>(null);
   const [muted, setMuted] = useState(true);
   const { user } = useUser();
-  const [isFavorite, setIsFavorite] = useState(false);
-
-  useEffect(() => {
-    const checkFavorite = async () => {
-      if (!user?.id || !movie?._id) return;
-      const { data } = await supabase
-        .from("user_movies")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("movie_id", movie._id)
-        .eq("relation_type", "favorite")
-        .maybeSingle();
-      setIsFavorite(!!data);
-    };
-    checkFavorite();
-  }, [user, movie]);
-
+  const { toggleFavorite, isFavorite } = useFavorites(movie?.slug);
 
   const handleFavorites = async () => {
     if (!user?.id) {
@@ -60,13 +45,10 @@ export default function DetailModal() {
       return;
     }
 
-    const { added } = await handleFavoriteClick(user.id, {
+    await toggleFavorite({
       slug: movie!.slug,
       title: movie!.name,
     });
-
-    setIsFavorite(added);
-    window.dispatchEvent(new Event("favoriteUpdated"));
   };
 
   const handleReady = useCallback((player: any) => {
@@ -120,8 +102,7 @@ export default function DetailModal() {
                   +
                 </PlayerControlButton>
                 <PlayerControlButton onClick={handleFavorites}>
-                  {/* ThumbUp Icon */}
-                  👍
+                  {isFavorite ? "💖" : "🤍"}
                 </PlayerControlButton>
                 <div className="flex-grow" />
                 <PlayerControlButton onClick={() => handleMute(muted)}>

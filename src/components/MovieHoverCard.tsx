@@ -1,6 +1,9 @@
 import { motion } from "framer-motion";
-import { Play, Plus, ThumbsUp, ChevronDown } from "lucide-react";
+import { Play, Plus, Heart, ChevronDown } from "lucide-react";
 import { getMovieImage } from "src/utils/imageHelper";
+import { useUser } from "@clerk/clerk-react";
+import { toast } from "react-hot-toast";
+import { useFavorites } from "src/hooks/useFavorites";
 
 interface MovieHoverCardProps {
   movie: any;
@@ -13,7 +16,7 @@ interface MovieHoverCardProps {
   onMouseLeave: () => void;
 }
 
-export default function MovieHoverCard({ 
+export default function MovieHoverCard({
   movie,
   movieDetail,
   isLoading,
@@ -24,6 +27,24 @@ export default function MovieHoverCard({
   onMouseLeave,
 }: MovieHoverCardProps) {
   const detail = movieDetail?.movie || movie;
+  const { user } = useUser();
+
+const { isFavorite, toggleFavorite } = useFavorites(detail?.slug);
+
+  const handleFavorites = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!user?.id) {
+      toast.error("Vui lòng đăng nhập để thêm vào danh sách yêu thích");
+      return;
+    }
+
+    await toggleFavorite({
+      slug: detail.slug,
+      title: detail.name,
+    });
+  };
+
 
   const getHoverPositionClass = () => {
     switch (hoverPosition) {
@@ -84,17 +105,16 @@ export default function MovieHoverCard({
           </p>
         )}
 
-        {/* Loading state */}
         {isLoading && (
           <div className="flex items-center justify-center py-2">
             <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
-        {/* Action Buttons */}
         {!isLoading && (
           <div className="flex items-center justify-between mt-1.5 pt-1.5">
             <div className="flex gap-1.5">
+              {/* Play */}
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={onPlay}
@@ -102,17 +122,25 @@ export default function MovieHoverCard({
               >
                 <Play className="w-3 h-3 text-black ml-0.5" fill="currentColor" />
               </motion.button>
+
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 className="w-6 h-6 border border-gray-500 rounded-full flex items-center justify-center text-white hover:border-white transition-colors"
               >
                 <Plus className="w-3 h-3" />
               </motion.button>
+
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                className="w-6 h-6 border border-gray-500 rounded-full flex items-center justify-center text-white hover:border-white transition-colors"
+                onClick={handleFavorites}
+                className={`w-6 h-6 border rounded-full flex items-center justify-center transition-colors ${isFavorite
+                  ? "bg-red-600 border-red-600 hover:bg-red-700 text-white"
+                  : "border-gray-500 text-white hover:border-white"
+                  }`}
               >
-                <ThumbsUp className="w-3 h-3" />
+                <Heart
+                  className={`w-3 h-3 ${isFavorite ? "fill-current text-white" : ""}`}
+                />
               </motion.button>
             </div>
 

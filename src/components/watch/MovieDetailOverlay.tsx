@@ -6,8 +6,8 @@ import { KKPhimDetailResponse } from "src/types/KKPhim";
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import supabase from "src/utils/supabase";
-import { handleFavoriteClick } from "src/hooks/useFavoritesAction";
 import { toast } from "react-hot-toast";
+import { useFavorites } from "src/hooks/useFavorites";
 
 interface MovieDetailModalProps {
   movie: KKPhimDetailResponse;
@@ -26,43 +26,23 @@ export default function MovieDetailModal({
   const episodes = movie.episodes || [];
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // ✅ Favorite state
   const { user } = useUser();
-  const [isFavorite, setIsFavorite] = useState(false);
-
-  // ✅ Check if movie is already favorite
-  useEffect(() => {
-    const checkFavorite = async () => {
-      if (!user?.id || !detail?._id) return;
-      const { data } = await supabase
-        .from("user_movies")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("movie_id", detail._id)
-        .eq("relation_type", "favorite")
-        .maybeSingle();
-      setIsFavorite(!!data);
-    };
-    checkFavorite();
-  }, [user, detail]);
-
-  // ✅ Handle toggle favorite
+  const { isFavorite, toggleFavorite } = useFavorites(detail?.slug);
+  
   const handleFavorites = async () => {
     if (!user?.id) {
       toast.error("Vui lòng đăng nhập để thêm vào danh sách yêu thích");
       return;
     }
 
-    const { added } = await handleFavoriteClick(user.id, {
+    await toggleFavorite({
       slug: detail.slug,
       title: detail.name,
     });
 
-    setIsFavorite(added);
     window.dispatchEvent(new Event("favoriteUpdated"));
   };
 
-  // ✅ Handle play
   const handlePlay = async () => {
     if (!detail?.slug) {
       console.warn("[MovieDetailModal] Missing slug");
@@ -135,11 +115,10 @@ export default function MovieDetailModal({
                       handlePlay();
                     }}
                     disabled={isPlaying}
-                    className={`flex items-center gap-2 text-lg font-semibold px-8 py-2.5 rounded-md transition ${
-                      isPlaying
+                    className={`flex items-center gap-2 text-lg font-semibold px-8 py-2.5 rounded-md transition ${isPlaying
                         ? "bg-gray-500 text-gray-300 cursor-not-allowed"
                         : "bg-white text-black hover:bg-gray-200"
-                    }`}
+                      }`}
                   >
                     {isPlaying ? (
                       <>
@@ -163,11 +142,10 @@ export default function MovieDetailModal({
                       e.stopPropagation();
                       handleFavorites();
                     }}
-                    className={`flex items-center justify-center w-11 h-11 rounded-full transition ${
-                      isFavorite
+                    className={`flex items-center justify-center w-11 h-11 rounded-full transition ${isFavorite
                         ? "bg-red-600 hover:bg-red-700 text-white"
                         : "bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white"
-                    }`}
+                      }`}
                     title={isFavorite ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
                   >
                     <Heart
