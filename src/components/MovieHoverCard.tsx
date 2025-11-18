@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { Play, Plus, Heart, ChevronDown } from "lucide-react";
+import { Play, Heart, ChevronDown, ThumbsUp, Plus } from "lucide-react";
 import { getMovieImage } from "src/utils/imageHelper";
 import { useUser } from "@clerk/clerk-react";
 import { toast } from "react-hot-toast";
 import { useFavorites } from "src/hooks/useFavorites";
+import { useWatchList } from "src/hooks/useWatchList";
 
 interface MovieHoverCardProps {
   movie: any;
@@ -30,6 +31,7 @@ export default function MovieHoverCard({
   const { user } = useUser();
 
 const { isFavorite, toggleFavorite } = useFavorites(detail?.slug);
+const { isInWatchList, toggleWatchList } = useWatchList(detail?.slug);
 
   const handleFavorites = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -40,6 +42,20 @@ const { isFavorite, toggleFavorite } = useFavorites(detail?.slug);
     }
 
     await toggleFavorite({
+      slug: detail.slug,
+      title: detail.name,
+    });
+  };
+
+  const handleWatchList = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!user?.id) {
+      toast.error("Vui lòng đăng nhập để thêm vào danh sách yêu thích");
+      return;
+    }
+
+    await toggleWatchList({
       slug: detail.slug,
       title: detail.name,
     });
@@ -125,9 +141,15 @@ const { isFavorite, toggleFavorite } = useFavorites(detail?.slug);
 
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                className="w-6 h-6 border border-gray-500 rounded-full flex items-center justify-center text-white hover:border-white transition-colors"
+                onClick={handleWatchList}
+                className={`w-6 h-6 border rounded-full flex items-center justify-center transition-colors ${isInWatchList
+                  ? "bg-red-600 border-red-600 hover:bg-red-700 text-white"
+                  : "border-gray-500 text-white hover:border-white"
+                  }`}
               >
-                <Plus className="w-3 h-3" />
+                <Plus
+                  className={`w-3 h-3 ${isInWatchList ? "fill-current text-white" : ""}`}
+                />
               </motion.button>
 
               <motion.button

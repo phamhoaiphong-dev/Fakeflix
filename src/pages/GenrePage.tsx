@@ -6,29 +6,22 @@ import { getOptimizedImageUrl } from "src/utils/imageHelper";
 import MovieDetailModal from "src/components/watch/MovieDetailOverlay";
 import MovieHoverCard from "src/components/MovieHoverCard";
 import { handlePlayClick } from "src/utils/playHelper";
-
-
-interface Movie {
-    _id: string;
-    name: string;
-    thumb_url: string;
-    slug: string;
-    year?: string;
-    quality?: string;
-    episode_current?: string;
-    episode_total?: string;
-    origin_name?: string;
-}
+import { useCountryFilter } from "src/hooks/useFilteredCountry";
+import { KKPhimMovie } from "src/types/KKPhim";
 
 export default function GenreMoviesPage() {
     const { slug } = useParams<{ slug: string }>();
-    const [movies, setMovies] = useState<Movie[]>([]);
     const [page, setPage] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(1);
     const [selectedMovie, setSelectedMovie] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
     const [genreName, setGenreName] = useState<string>("");
+
+    // Filter by country
+    const { filterMovies, countByCountry } = useCountryFilter();
+    const [movies, setMovies] = useState<KKPhimMovie[]>([]);
+
 
     // Hover states
     const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -50,7 +43,13 @@ export default function GenreMoviesPage() {
                 const json = await res.json();
 
                 if (json.status === true && (json.data?.items || json.data?.movieList)) {
-                    setMovies(json.data.items || json.data.movieList || []);
+                    const rawMovies = json.data.items || [];
+                    const filteredMovies = filterMovies(rawMovies); 
+                    console.log(`📊 Trước khi lọc: ${rawMovies.length} phim`);
+                    console.log(`✅ Sau khi lọc: ${filteredMovies.length} phim`);
+                    console.log(`🌍 Phân bố theo quốc gia:`, countByCountry(rawMovies));
+                    setMovies(filteredMovies);
+
                     setTotalPages(json.data.params?.pagination?.totalPages || 1);
 
                     if (json.data.breadCrumb && json.data.breadCrumb.length > 1) {

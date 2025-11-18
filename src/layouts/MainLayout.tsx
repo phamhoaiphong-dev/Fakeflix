@@ -10,7 +10,16 @@ export default function MainLayout() {
   const { user, isSignedIn, isLoaded } = useUser();
   const location = useLocation();
 
-  // ⏳ 1. Chờ Clerk load xong
+  // TẤT CẢ CÁC HOOK PHẢI Ở ĐẦU, KHÔNG ĐƯỢC ĐẶT SAU IF/RETURN!
+  useEffect(() => {
+    if (isSignedIn && user) {
+      syncUserToSupabase(user);
+    }
+  }, [isSignedIn, user?.id, user?.updatedAt]);
+
+  useSyncUser(); // ← Dời lên đây là xong!
+
+  // Sau tất cả hook mới được kiểm tra điều kiện
   if (!isLoaded) {
     return (
       <div className="w-full min-h-screen bg-black flex items-center justify-center">
@@ -19,29 +28,17 @@ export default function MainLayout() {
     );
   }
 
-  // 🔁 2. Sync user với Supabase
-  useEffect(() => {
-    if (isSignedIn && user) {
-      syncUserToSupabase(user);
-    }
-  }, [isSignedIn, user?.id, user?.updatedAt]);
-  useSyncUser();
-
-
   const isAuthPage =
     location.pathname === "/sign-in" || location.pathname === "/sign-up";
 
-  // 🚪 3. Nếu chưa đăng nhập + không ở trang auth → /sign-in
   if (!isSignedIn && !isAuthPage) {
     return <Navigate to="/sign-in" replace />;
   }
 
-  // 🏠 4. Nếu đã đăng nhập + đang ở trang auth → về trang chủ
   if (isSignedIn && isAuthPage) {
     return <Navigate to={`/${MAIN_PATH.browse}`} replace />;
   }
 
-  // 🔐 5. Nếu là trang auth
   if (isAuthPage) {
     return (
       <div className="w-full min-h-screen bg-black flex items-center justify-center">
@@ -50,7 +47,6 @@ export default function MainLayout() {
     );
   }
 
-  // 🎬 6. Nếu đã đăng nhập → render app
   return (
     <div className="w-full min-h-screen bg-black px-0">
       <MainHeader />

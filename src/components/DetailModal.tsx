@@ -18,6 +18,8 @@ import supabase from "src/utils/supabase";
 import { useFavorites } from "src/hooks/useFavorites";
 
 //likes 
+import { useWatchList } from "src/hooks/useWatchList";
+import { Heart, Plus, ThumbsUp } from "lucide-react";
 export default function DetailModal() {
   const { detail, setDetailType } = useDetailModal();
   const navigate = useNavigate();
@@ -37,6 +39,7 @@ export default function DetailModal() {
   const playerRef = useRef<any>(null);
   const [muted, setMuted] = useState(true);
   const { user } = useUser();
+  const { toggleWatchList, isInWatchList } = useWatchList(movie?.slug);
   const { toggleFavorite, isFavorite } = useFavorites(movie?.slug);
 
   const handleFavorites = async () => {
@@ -46,6 +49,18 @@ export default function DetailModal() {
     }
 
     await toggleFavorite({
+      slug: movie!.slug,
+      title: movie!.name,
+    });
+  };
+
+  const handleWatchList = async () => {
+    if (!user?.id) {
+      toast.error("Vui lòng đăng nhập để thêm vào danh sách yêu thích");
+      return;
+    }
+
+    await toggleWatchList({
       slug: movie!.slug,
       title: movie!.name,
     });
@@ -97,13 +112,14 @@ export default function DetailModal() {
               {/* Control Buttons */}
               <div className="flex items-center mb-4 space-x-2">
                 <PlayButton className="text-black py-0" onClick={() => navigate(`/watch/${movie.slug}`)} />
-                <PlayerControlButton>
-                  {/* Add Icon */}
-                  +
+                <PlayerControlButton onClick={handleWatchList}>
+                  <Plus color="white" fill={isInWatchList ? "white" : "none"} />
                 </PlayerControlButton>
+
                 <PlayerControlButton onClick={handleFavorites}>
-                  {isFavorite ? "💖" : "🤍"}
+                  <Heart color="white" fill={isFavorite ? "white" : "none"} />
                 </PlayerControlButton>
+
                 <div className="flex-grow" />
                 <PlayerControlButton onClick={() => handleMute(muted)}>
                   {!muted ? "🔊" : "🔇"}

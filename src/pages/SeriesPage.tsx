@@ -6,26 +6,29 @@ import { getOptimizedImageUrl } from "src/utils/imageHelper";
 import { handlePlayClick } from "src/utils/playHelper";
 import MovieDetailModal from "src/components/watch/MovieDetailOverlay";
 import MovieHoverCard from "src/components/MovieHoverCard";
-
-interface Movie {
-    _id: string;
-    name: string;
-    thumb_url: string;
-    poster_url?: string;
-    slug: string;
-    year?: string;
-    quality?: string;
-    episode_current?: string;
-    origin_name?: string;
-    time?: string;
-    lang?: string;
-    tmdb?: {
-        vote_average?: number;
-    };
-}
+import { ALLOWED_COUNTRIES, useCountryFilter } from "src/hooks/useFilteredCountry";
+import { KKPhimMovie } from "src/types/KKPhim";
 
 export default function SeriesPage() {
-    const [movies, setMovies] = useState<Movie[]>([]);
+    const [movies, setMovies] = useState<KKPhimMovie[]>([]);
+    const { filterMovies, countByCountry } = useCountryFilter({
+        customAllowedCountries: ALLOWED_COUNTRIES,
+    });
+    const [selectedCountry, setSelectedCountry] = useState<string>("all");
+    function slugToLabel(slug: string) {
+        switch (slug) {
+            case "au-my": return "Âu - Mỹ";
+            case "han-quoc": return "Hàn Quốc";
+            case "nhat-ban": return "Nhật Bản";
+            case "phap": return "Pháp";
+            case "trung-quoc": return "Trung Quốc";
+            case "an-do": return "Ấn Độ";
+            case "hong-kong": return "Hong Kong";
+            case "thai-lan": return "Thái Lan";
+            case "dai-loan": return "Đài Loan";
+            default: return slug;
+        }
+    }
     const [page, setPage] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(1);
     const [selectedMovie, setSelectedMovie] = useState<any>(null);
@@ -65,7 +68,8 @@ export default function SeriesPage() {
                         lang: item.lang,
                         tmdb: item.tmdb || {},
                     }));
-                    setMovies(items);
+                    const filtered = filterMovies(items);
+                    setMovies(filtered);
                     setTotalPages(json.data.params?.pagination?.totalPages || 1);
                 } else {
                     console.error("API lỗi hoặc không có dữ liệu:", json);
@@ -79,7 +83,12 @@ export default function SeriesPage() {
 
         fetchSeries();
     }, [page]);
-
+    const filteredMovies =
+        selectedCountry === "all"
+            ? movies
+            : movies.filter(movie =>
+                movie.country?.some(c => c.slug === selectedCountry)
+            );
     // Fetch chi tiết phim khi hover
     useEffect(() => {
         if (hoveredId && !movieDetails[hoveredId]) {
@@ -180,7 +189,18 @@ export default function SeriesPage() {
                         Cập nhật mới nhất • Trang {page} / {totalPages}
                     </p>
                 </div>
-
+                <select
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value)}
+                    className="bg-neutral-900 border border-neutral-700 text-white px-4 py-2 rounded-lg min-w-[200px] hover:border-neutral-500 transition mb-8 mt-4"
+                >
+                    <option value="all">🌍Tất cả quốc gia</option>
+                    {ALLOWED_COUNTRIES.map(slug => (
+                        <option key={slug} value={slug}>
+                            {slugToLabel(slug)}
+                        </option>
+                    ))}
+                </select>
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
                         <div className="text-center">
@@ -192,7 +212,7 @@ export default function SeriesPage() {
                     <>
                         {/* Grid phim */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 md:gap-4 lg:gap-5">
-                            {movies.map((movie) => {
+                            {filteredMovies.map((movie) => {
                                 const isHovered = hoveredId === movie._id;
                                 const detail = movieDetails[movie._id] || movie;
 

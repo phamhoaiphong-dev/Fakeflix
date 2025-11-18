@@ -19,8 +19,11 @@ const ALLOWED_COUNTRIES = [
   "han-quoc",
   "nhat-ban",
   "trung-quoc",
-  "thai-lan",
+  "phap",      
+  "an-do",     
   "hong-kong",
+  "thai-lan",
+  "dai-loan",  
 ] as const;
 
 // ==========================================

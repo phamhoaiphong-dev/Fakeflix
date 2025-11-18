@@ -16,7 +16,7 @@ const MainHeader = () => {
   const [userOpen, setUserOpen] = useState(false);
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const isWatchPage = pathname.startsWith("/watch");
+  const isWatchPage = pathname.startsWith("/watch/");
 
   const { user, isSignedIn } = useUser(); 
   const { signOut } = useClerk();
@@ -65,6 +65,13 @@ const MainHeader = () => {
 
           <DropdownGenre />
           <DropdownCountry />
+
+          <NetflixNavigationLink
+            to="/watchlist"
+            className="text-white text-sm hover:text-gray-300"
+          >
+            Danh Sách xem sau 
+          </NetflixNavigationLink>
 
           <NetflixNavigationLink
             to="/favorites-list"

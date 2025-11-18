@@ -13,6 +13,7 @@ const CountryPage = () => import("src/pages/CountryPage");
 const FeatureFilmsPage = () => import("src/pages/FeatureFilmsPage");
 const SeriesPage = () => import("src/pages/SeriesPage");
 const FavoritesPage = () => import("src/pages/FavoritesPage");
+const WatchListPage = () => import("src/pages/WatchListPage");
 
 const router = createBrowserRouter([
   {
@@ -43,6 +44,13 @@ const router = createBrowserRouter([
         path: MAIN_PATH.favorites,
         lazy: async () => {
           const module = await FavoritesPage();
+          return { Component: module.default };
+        },
+      },
+      {
+        path: MAIN_PATH.watchlist,
+        lazy: async () => {
+          const module = await WatchListPage();
           return { Component: module.default };
         },
       },

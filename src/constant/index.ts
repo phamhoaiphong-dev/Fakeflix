@@ -9,6 +9,7 @@ export const MAIN_PATH = {
   series: "phim-bo",
   featurefilm: "phim-le",
   favorites: "favorites-list",
+  watchlist: "watchlist",
   myList: "my-list",
   genre: "the-loai",
   watch: "watch",

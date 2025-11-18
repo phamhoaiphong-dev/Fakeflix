@@ -45,11 +45,10 @@ export default function FavoritesPage() {
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const fetchingRef = useRef<Record<string, boolean>>({});
 
-  // STATE FOR DELETE HOVER EFFECT
-  const [hoveringDeleteBtn, setHoveringDeleteBtn] = useState(false);
+
   // State for confirm delete 
-  const [confirmDeleteFor, setConfirmDeleteFor] = useState<string | null>(null);
-  // State for disable hover card
+  const [confirmDeleteFor, setConfirmDeleteFor] = useState<number | null>(null); 
+   // State for disable hover card
   const [disableHoverCard, setDisableHoverCard] = useState(false);
 
 
@@ -140,8 +139,8 @@ export default function FavoritesPage() {
       });
   }, [hoveredId, movieDetails]);
 
-  const handleMouseEnter = (movieId: string) => {
-    const cardElement = cardRefs.current[movieId];
+  const handleMouseEnter = (favId: number, movieId: string) => {
+    const cardElement = cardRefs.current[favId];
     if (cardElement) {
       const rect = cardElement.getBoundingClientRect();
       const windowWidth = window.innerWidth;
@@ -209,26 +208,25 @@ export default function FavoritesPage() {
         : "left-1/2 -translate-x-1/2";
 
 
-  const removeFavorite = async (movieSlug: string) => {
-    if (!user?.id) return;
-
-    const { data: existing } = await supabase
-      .from("user_movies")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("movie_id", movieSlug)
-      .eq("relation_type", "favorite")
-      .maybeSingle();
-
-    if (existing) {
-      await supabase.from("user_movies").delete().eq("id", existing.id);
-
-      setFavorites((prev) => prev.filter((f) => f.movie_id !== movieSlug));
-
-      toast.error("Đã xóa khỏi yêu thích ❌");
-      window.dispatchEvent(new Event("favoriteUpdated"));
-    }
-  };
+        const removeFavorite = async (movieSlug: string, favoriteId: number) => {
+          if (!user?.id) return;
+        
+          const { error } = await supabase
+            .from("user_movies")
+            .delete()
+            .eq("id", favoriteId);
+        
+          if (error) {
+            console.error("Lỗi xóa:", error);
+            toast.error("Xóa thất bại!");
+            return;
+          }
+        
+          setFavorites((prev) => prev.filter((f) => f.id !== favoriteId));
+        
+          toast.error("Đã xóa khỏi yêu thích");
+          window.dispatchEvent(new Event("favoriteUpdated"));
+        };
 
 
   // ✅ UI
@@ -268,10 +266,10 @@ export default function FavoritesPage() {
                 const isHovered = hoveredId === fav.movie_id;
                 return (
                   <div
-                    key={fav.movie_id}
-                    ref={(el) => (cardRefs.current[fav.movie_id] = el)}
+                    key={fav.id}
+                    ref={(el) => (cardRefs.current[fav.id] = el)}
                     className="relative cursor-pointer overflow-visible"
-                    onMouseEnter={() => handleMouseEnter(fav.movie_id)}
+                    onMouseEnter={() => handleMouseEnter(fav.id, fav.movie_id)}
                     onMouseLeave={handleMouseLeave}
                   >
                     {/* Poster */}
@@ -286,9 +284,8 @@ export default function FavoritesPage() {
                           onClick={(e) => {
                             e.stopPropagation();
                             setDisableHoverCard(true);
-                            setConfirmDeleteFor(
-                              confirmDeleteFor === fav.movie_id ? null : fav.movie_id
-                            );
+                            // Dùng fav.id (number) → chuyển thành string để so sánh
+                            setConfirmDeleteFor(prev => prev === fav.id ? null : fav.id);
                           }}
                           onMouseEnter={(e) => {
                             e.stopPropagation();
@@ -297,28 +294,15 @@ export default function FavoritesPage() {
                           onMouseLeave={() => {
                             if (!confirmDeleteFor) setDisableHoverCard(false);
                           }}
-                          className="
-                            absolute top-2 left-2
-                            w-8 h-8 flex items-center justify-center
-                            bg-black/60 hover:bg-black/80
-                            rounded-full backdrop-blur-sm
-                            text-white z-50 cursor-pointer
-                          "
+                          className="absolute top-2 left-2 w-8 h-8 flex items-center justify-center bg-black/60 hover:bg-black/80 rounded-full backdrop-blur-sm text-white z-50 cursor-pointer"
                         >
-                          ✕
+                          X
                         </button>
 
-
-                        {/* Popup xác nhận xoá */}
-                        {confirmDeleteFor === fav.movie_id && (
+                        {/* Popup xác nhận xóa – sửa ở đây */}
+                        {confirmDeleteFor === fav.id && (
                           <div
-                            className="
-                              absolute top-12 left-2
-                              bg-black/80 backdrop-blur-md
-                              p-3 rounded-lg shadow-lg
-                              text-sm text-white
-                              z-50
-                            "
+                            className="absolute top-12 left-2 bg-black/80 backdrop-blur-md p-3 rounded-lg shadow-lg text-sm text-white z-50"
                             onMouseEnter={() => setDisableHoverCard(true)}
                             onMouseLeave={() => {
                               setConfirmDeleteFor(null);
@@ -326,17 +310,17 @@ export default function FavoritesPage() {
                             }}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <p className="mb-2">Bạn có chắc muốn xoá?</p>
+                            <p className="mb-2">Bạn có chắc muốn xóa?</p>
                             <div className="flex gap-2">
                               <button
                                 onClick={() => {
-                                  removeFavorite(fav.movie_id);
+                                  removeFavorite(fav.movie_id, fav.id); 
                                   setConfirmDeleteFor(null);
                                   setDisableHoverCard(false);
                                 }}
                                 className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs"
                               >
-                                Xoá
+                                Xóa
                               </button>
                               <button
                                 onClick={() => {
@@ -350,6 +334,7 @@ export default function FavoritesPage() {
                             </div>
                           </div>
                         )}
+
                         {thumb ? (
                           <img
                             src={thumb}

@@ -8,6 +8,7 @@ import { useUser } from "@clerk/clerk-react";
 import supabase from "src/utils/supabase";
 import { toast } from "react-hot-toast";
 import { useFavorites } from "src/hooks/useFavorites";
+import { useWatchList } from "src/hooks/useWatchList";
 
 interface MovieDetailModalProps {
   movie: KKPhimDetailResponse;
@@ -28,7 +29,8 @@ export default function MovieDetailModal({
 
   const { user } = useUser();
   const { isFavorite, toggleFavorite } = useFavorites(detail?.slug);
-  
+  const { isInWatchList, toggleWatchList } = useWatchList(detail?.slug);
+
   const handleFavorites = async () => {
     if (!user?.id) {
       toast.error("Vui lòng đăng nhập để thêm vào danh sách yêu thích");
@@ -36,6 +38,20 @@ export default function MovieDetailModal({
     }
 
     await toggleFavorite({
+      slug: detail.slug,
+      title: detail.name,
+    });
+
+    window.dispatchEvent(new Event("favoriteUpdated"));
+  };
+
+  const handleWatchList = async () => {
+    if (!user?.id) {
+      toast.error("Vui lòng đăng nhập để thêm vào danh sách yêu thích");
+      return;
+    }
+
+    await toggleWatchList({
       slug: detail.slug,
       title: detail.name,
     });
@@ -132,8 +148,21 @@ export default function MovieDetailModal({
                   </button>
 
                   {/* ➕ Add to list */}
-                  <button className="flex items-center justify-center w-11 h-11 rounded-full bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white transition">
-                    <Plus size={24} />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleWatchList();
+                    }}
+                    className={`flex items-center justify-center w-11 h-11 rounded-full transition ${isInWatchList
+                        ? "bg-red-600 hover:bg-red-700 text-white"
+                        : "bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white"
+                      }`}
+                    title={isInWatchList ? "Xóa khỏi danh sách xem sau" : "Thêm vào danh sách xem sau"}
+                  >
+                    <Plus
+                      size={24}
+                      className={isInWatchList ? "fill-current text-white" : ""}
+                    />
                   </button>
 
                   {/* ❤️ Favorite toggle */}
@@ -146,7 +175,7 @@ export default function MovieDetailModal({
                         ? "bg-red-600 hover:bg-red-700 text-white"
                         : "bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white"
                       }`}
-                    title={isFavorite ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
+                    title={isFavorite ? "Xóa khỏi danh sách yêu thích" : "Thêm vào danh sách yêu thích"}
                   >
                     <Heart
                       size={24}
