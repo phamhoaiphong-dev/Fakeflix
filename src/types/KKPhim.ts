@@ -264,3 +264,11 @@ export type MovieType =
   | 'phim-vietsub'
   | 'phim-thuyet-minh'
   | 'phim-long-tieng';
+
+  export type ContinueWatchingMovie = KKPhimMovie & {
+  progress?: number;          
+  current_time?: number;     
+  duration?: number;         
+  episode_slug?: string;     
+  continueWatchingUrl?: string;
+};

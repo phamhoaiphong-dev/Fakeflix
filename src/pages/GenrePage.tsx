@@ -44,10 +44,7 @@ export default function GenreMoviesPage() {
 
                 if (json.status === true && (json.data?.items || json.data?.movieList)) {
                     const rawMovies = json.data.items || [];
-                    const filteredMovies = filterMovies(rawMovies); 
-                    console.log(`📊 Trước khi lọc: ${rawMovies.length} phim`);
-                    console.log(`✅ Sau khi lọc: ${filteredMovies.length} phim`);
-                    console.log(`🌍 Phân bố theo quốc gia:`, countByCountry(rawMovies));
+                    const filteredMovies = filterMovies(rawMovies);
                     setMovies(filteredMovies);
 
                     setTotalPages(json.data.params?.pagination?.totalPages || 1);

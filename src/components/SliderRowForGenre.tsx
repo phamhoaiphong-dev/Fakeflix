@@ -7,9 +7,11 @@ import MovieCard from "./watch/MovieCard";
 interface SliderRowForGenreProps {
   title: string;
   movies: KKPhimMovie[];
+  variant?: "default" | "continue-watching";
 }
 
-export default function SliderRowForGenre({ title, movies }: SliderRowForGenreProps) {
+export default function SliderRowForGenre({ title, movies ,variant ="default"}: SliderRowForGenreProps) {
+  const isContinueWatching = variant === "continue-watching";
   const [showLeftButton, setShowLeftButton] = useState(false);
   const [showRightButton, setShowRightButton] = useState(true);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -90,7 +92,11 @@ export default function SliderRowForGenre({ title, movies }: SliderRowForGenrePr
               }}
             >
               <div className="relative hover:z-50">
-                <MovieCard movie={movie} />
+                <MovieCard 
+                  movie={movie as any}
+                  showProgress={isContinueWatching}
+                  large={isContinueWatching}
+                />
               </div>
             </div>
           ))}

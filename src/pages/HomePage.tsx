@@ -1,5 +1,6 @@
 // src/pages/HomePage.tsx
 import { useEffect, useState } from "react";
+import ContinueWatchingSection from "src/components/ContinueWatchingSection";
 import HeroSection from "src/components/HeroSection";
 import SliderRowForGenre from "src/components/SliderRowForGenre";
 import {
@@ -114,12 +115,15 @@ export default function HomePage() {
       {heroMovie && (
         <HeroSection movie={heroMovie} />
       )}
-
-      <div className="netflix-container space-y-8 py-6">
-        {rows.map((row) => (
-          <SliderRowForGenre key={row.title} title={row.title} movies={row.movies} />
-        ))}
+      <div className="space-y-12 py-6"> 
+        <ContinueWatchingSection />
+        <div className="netflix-container space-y-8 py-6">
+          {rows.map((row) => (
+            <SliderRowForGenre key={row.title} title={row.title} movies={row.movies} />
+          ))}
+        </div>
       </div>
+
     </div>
   );
 

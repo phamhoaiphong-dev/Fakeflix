@@ -3,13 +3,18 @@ import { useMovieDetail, useRecommendMovies } from "src/hooks/useMovieDetail";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, X, ChevronDown } from "lucide-react";
-import axios from "axios";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useHistory } from "src/hooks/useHistory";
+import axios from "axios";
 
 export default function WatchPage() {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
   const { data, isLoading, error } = useMovieDetail(slug);
+  const { saveProgress } = useHistory(
+    slug,
+    searchParams.get("ep") || undefined
+  );
   const navigate = useNavigate();
 
   const [selectedServer, setSelectedServer] = useState(0);
@@ -22,6 +27,8 @@ export default function WatchPage() {
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const lastSaveTimeRef = useRef<number>(0);
 
   const movie = data?.movie;
   const episodes = data?.episodes;
@@ -77,7 +84,7 @@ export default function WatchPage() {
       console.log('[WatchPage] No ep param, using first episode');
     }
   }, [episodes, searchParams]);
-  
+
   console.log("[DEBUG] Render WatchPage:", {
     hasEpisodes: !!episodes,
     episodesLength: episodes?.length,
@@ -85,6 +92,35 @@ export default function WatchPage() {
     selectedEpisode,
     currentEpisode,
   });
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !movie || !currentEpisode) return;
+
+    const handleTimeUpdate = () => {
+      if (!video.duration || video.duration === Infinity) return;
+
+      const now = Date.now();
+      if (!lastSaveTimeRef.current || now - lastSaveTimeRef.current > 5000) {
+        lastSaveTimeRef.current = now;
+
+        saveProgress({
+          currentTime: video.currentTime,
+          duration: video.duration,
+          movie: {
+            title: movie.name,
+            name: movie.origin_name,
+            slug: movie.slug,
+            poster_path: movie.poster_url,
+          },
+          episodeSlug: currentEpisode?.slug,
+        });
+      }
+    };
+
+    video.addEventListener("timeupdate", handleTimeUpdate);
+    return () => video.removeEventListener("timeupdate", handleTimeUpdate);
+  }, [movie, currentEpisode, saveProgress]);
 
 
   useEffect(() => {
@@ -172,6 +208,13 @@ export default function WatchPage() {
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     };
   }, [showEpisodes]);
+
+  useEffect(() => {
+    if (currentEpisode?.slug && slug) {
+      const newUrl = `/watch/${slug}?ep=${currentEpisode.slug}`;
+      window.history.replaceState(null, '', newUrl);
+    }
+  }, [currentEpisode?.slug, slug]);
 
   const goToNextEpisode = () => {
     const totalEpisodes = episodes?.[selectedServer]?.server_data?.length || 0;
