@@ -1,4 +1,4 @@
-import Hls, { HlsConfig, Events } from "hls.js";
+import Hls, { HlsConfig } from "hls.js";
 import { useMovieDetail } from "src/hooks/useMovieDetail";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,7 +21,7 @@ export default function WatchPage() {
   const { data, isLoading, error } = useMovieDetail(slug);
 
   const normalizedEpParam = normalizeEpisodeSlug(searchParams.get("ep") ?? undefined);
-  const { currentTime, saveProgress} = useHistory(slug, normalizedEpParam);
+  const { currentTime, saveProgress } = useHistory(slug, normalizedEpParam);
 
   const navigate = useNavigate();
 
@@ -33,14 +33,12 @@ export default function WatchPage() {
   const [isEpisodeReady, setIsEpisodeReady] = useState(false);
 
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hlsRef = useRef<any>(null);
-
   const lastSaveTimeRef = useRef<number>(0);
-  const hasInitialSaveRef = useRef(false);
-  const hasResumedRef = useRef(false);
-  const pendingResumeTimeRef = useRef<number | null>(null); 
+  
+  // ✅ FIX: Dùng Map để track resume state cho từng episode
+  const hasResumedMapRef = useRef<Map<string, boolean>>(new Map());
 
   const movie = data?.movie;
   const episodes = data?.episodes;
@@ -49,6 +47,9 @@ export default function WatchPage() {
     selectedEpisode !== null && episodes?.[selectedServer]?.server_data?.[selectedEpisode]
       ? episodes[selectedServer].server_data[selectedEpisode]
       : null;
+
+  // ✅ Tạo unique key cho mỗi episode
+  const currentEpisodeKey = `${slug}-${normalizedEpParam || 'single'}`;
 
   useEffect(() => {
     if (!episodes || episodes.length === 0) {
@@ -84,29 +85,35 @@ export default function WatchPage() {
       setSelectedEpisode(0);
       setIsEpisodeReady(true);
     }
-    hasInitialSaveRef.current = false;
-    hasResumedRef.current = false;
+    
+    // ✅ Chỉ reset lastSaveTime, không reset hasResumed
     lastSaveTimeRef.current = 0;
   }, [episodes, searchParams]);
 
+  // ✅ Resume logic - sử dụng Map để track
   useEffect(() => {
     const video = videoRef.current;
 
-    if (!video || !currentTime || currentTime <= 0 || hasResumedRef.current) {
+    if (!video || !currentTime || currentTime <= 0) {
+      return;
+    }
+
+    // ✅ Kiểm tra xem episode này đã resume chưa
+    if (hasResumedMapRef.current.get(currentEpisodeKey)) {
       return;
     }
 
     const attemptResume = () => {
-      if (hasResumedRef.current) return;
+      if (hasResumedMapRef.current.get(currentEpisodeKey)) return;
 
       if (video.duration && !isNaN(video.duration) && video.duration > 0 && video.duration !== Infinity) {
         const safeTime = Math.min(currentTime, Math.max(0, video.duration - 1));
 
-        console.log('[WatchPage] 🎯 Resuming to:', safeTime, 'from history currentTime:', currentTime);
+        console.log('[WatchPage] 🎯 Resuming to:', safeTime, 'for episode:', currentEpisodeKey);
 
         try {
           video.currentTime = safeTime;
-          hasResumedRef.current = true;
+          hasResumedMapRef.current.set(currentEpisodeKey, true); // ✅ Đánh dấu đã resume
           console.log('[WatchPage] ✅ Resume successful!');
         } catch (err) {
           console.error('[WatchPage] Resume failed:', err);
@@ -143,7 +150,7 @@ export default function WatchPage() {
       video.removeEventListener('canplay', onCanPlay);
       video.removeEventListener('durationchange', onDurationChange);
     };
-  }, [currentTime, currentEpisode]); 
+  }, [currentTime, currentEpisode, currentEpisodeKey]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -167,7 +174,7 @@ export default function WatchPage() {
       ? currentEpisode.link_m3u8
       : `https:${currentEpisode.link_m3u8}`;
 
-    const src = `https://api.isme.io.vn/proxy/m3u8?url=${encodeURIComponent(rawUrl)}`;
+    const src = `https://phimapi-proxy-v2.phongphdev.workers.dev/proxy/m3u8?url=${encodeURIComponent(rawUrl)}`;
 
     const hlsConfig: Partial<HlsConfig> = {
       maxBufferLength: 30,
@@ -181,7 +188,7 @@ export default function WatchPage() {
 
     const attachListeners = () => {
       const onLoadedMetadata = () => {
-           video.muted = previousMuted;
+        video.muted = previousMuted;
       };
 
       const onTimeUpdate = () => {
@@ -189,6 +196,10 @@ export default function WatchPage() {
         const now = Date.now();
         if (lastSaveTimeRef.current && now - lastSaveTimeRef.current < 5000) return;
         lastSaveTimeRef.current = now;
+
+        // ✅ Kiểm tra tập cuối
+        const totalEpisodes = episodes?.[selectedServer]?.server_data?.length || 0;
+        const isLastEp = selectedEpisode !== null && selectedEpisode === totalEpisodes - 1;
 
         saveProgress({
           currentTime: video.currentTime,
@@ -200,6 +211,7 @@ export default function WatchPage() {
             poster_path: movie.poster_url,
           },
           episodeSlug: cleanSlug,
+          isLastEpisode: isLastEp, // ✅ Truyền flag
         });
       };
 
@@ -255,7 +267,7 @@ export default function WatchPage() {
     }
 
     return;
-  }, [movie, currentEpisode]); 
+  }, [movie, currentEpisode, episodes, selectedServer, selectedEpisode, saveProgress]);
 
   useEffect(() => {
     if (currentEpisode?.slug && slug) {
@@ -281,7 +293,9 @@ export default function WatchPage() {
 
   const goToNextEpisode = useCallback(() => {
     const total = episodes?.[selectedServer]?.server_data?.length || 0;
-    if (selectedEpisode !== null && selectedEpisode < total - 1) setSelectedEpisode(selectedEpisode + 1);
+    if (selectedEpisode !== null && selectedEpisode < total - 1) {
+      setSelectedEpisode(selectedEpisode + 1);
+    }
   }, [episodes, selectedEpisode, selectedServer]);
 
   if (isLoading || !isEpisodeReady) {
@@ -366,11 +380,9 @@ export default function WatchPage() {
             )}
           </AnimatePresence>
 
-          {/* Episodes sidebar */}
           <AnimatePresence>
             {showEpisodes && (
               <>
-                {/* Backdrop */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -379,7 +391,6 @@ export default function WatchPage() {
                   className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50"
                 />
 
-                {/* Sidebar */}
                 <motion.div
                   initial={{ x: "100%" }}
                   animate={{ x: 0 }}
@@ -403,7 +414,6 @@ export default function WatchPage() {
                       </button>
                     </div>
 
-                    {/* Server selector */}
                     {episodes && episodes.length > 1 && (
                       <div className="px-6 pb-4 border-b border-gray-800">
                         <label className="text-xs text-gray-400 mb-2 block uppercase tracking-wider">
@@ -429,7 +439,6 @@ export default function WatchPage() {
                       </div>
                     )}
 
-                    {/* Related seasons/parts */}
                     {relatedSeasons.length > 1 && (
                       <div className="px-6 py-4 border-b border-gray-800">
                         <label className="text-xs text-gray-400 mb-3 block uppercase tracking-wider">
@@ -475,7 +484,6 @@ export default function WatchPage() {
                     )}
                   </div>
 
-                  {/* Episodes list */}
                   <div className="p-6 space-y-2">
                     {episodes?.[selectedServer]?.server_data?.map((episode, idx) => (
                       <motion.button
@@ -518,7 +526,6 @@ export default function WatchPage() {
                     ))}
                   </div>
 
-                  {/* Next episode suggestion */}
                   {selectedEpisode !== null && selectedEpisode < (episodes?.[selectedServer]?.server_data?.length || 0) - 1 && (
                     <div className="sticky bottom-0 bg-gradient-to-t from-[#141414] via-[#141414] to-transparent p-6 pt-8">
                       <button

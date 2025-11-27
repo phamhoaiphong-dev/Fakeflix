@@ -31,7 +31,6 @@ export function useHistory(movieSlug?: string, episodeSlug?: string) {
     const cacheKey = getCacheKey(movieSlug, episodeSlug);
     const cached = historyCache.get(cacheKey);
 
-    // Áp dụng cache ngay lập tức → không bị nhảy về 0s khi đổi tập
     if (cached) {
       setCurrentTime(cached.currentTime);
       setProgress(cached.progress);
@@ -98,6 +97,7 @@ export function useHistory(movieSlug?: string, episodeSlug?: string) {
         poster_path?: string;
       };
       episodeSlug?: string;
+      isLastEpisode?: boolean;
     }) => {
       if (!userId || !movieSlug) return;
 
@@ -106,6 +106,45 @@ export function useHistory(movieSlug?: string, episodeSlug?: string) {
 
       const current = Math.floor(params.currentTime);
       const progressPercent = Math.min(Math.round((current / duration) * 100), 100);
+      const COMPLETION_THRESHOLD = 98;
+      if (progressPercent >= COMPLETION_THRESHOLD) {
+        try {
+          let query = supabase
+            .from("user_movies")
+            .delete()
+            .eq("user_id", userId)
+            .eq("movie_id", movieSlug)
+            .eq("relation_type", HISTORY_TYPE);
+
+          if (params.episodeSlug) {
+            query = query.eq("episode_slug", params.episodeSlug);
+          } else {
+            query = query.is("episode_slug", null);
+          }
+          await query;
+          if (params.isLastEpisode) {
+            await supabase
+              .from("user_movies")
+              .delete()
+              .eq("user_id", userId)
+              .eq("movie_id", movieSlug)
+              .eq("relation_type", HISTORY_TYPE);
+          }
+          for (const key of Array.from(historyCache.keys())) {
+            if (key.startsWith(`${movieSlug}|||`)) {
+              historyCache.delete(key);
+            }
+          }
+          setCurrentTime(0);
+          setProgress(0);
+          setIsInHistory(false);
+
+          window.dispatchEvent(new Event("historyUpdated"));
+        } catch (err) {
+          console.error("Lỗi xóa phim đã hoàn thành:", err);
+        }
+        return;
+      }
       const MIN_SECONDS = 90;        // ít nhất 90 giây
       const MIN_PERCENTAGE = 10;     // hoặc ít nhất 10%
 
