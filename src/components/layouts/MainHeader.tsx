@@ -8,7 +8,8 @@ import { Bell } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DropdownCountry from "../DropdownCountry";
 import DropdownGenre from "../DropdownGenre";
-import { useUser, useClerk } from "@clerk/clerk-react"; 
+import { useUser, useClerk } from "@clerk/clerk-react";
+import NotificationBell from "../NotificationBell";
 
 const MainHeader = () => {
   const isOffset = useOffSetTop(APP_BAR_HEIGHT);
@@ -18,18 +19,17 @@ const MainHeader = () => {
   const { pathname } = useLocation();
   const isWatchPage = pathname.startsWith("/watch/");
 
-  const { user, isSignedIn } = useUser(); 
+  const { user, isSignedIn } = useUser();
   const { signOut } = useClerk();
 
   if (isWatchPage) return null;
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        isOffset
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isOffset
           ? "bg-black shadow-md"
           : "bg-gradient-to-b from-black/80 to-transparent"
-      }`}
+        }`}
       style={{ height: APP_BAR_HEIGHT }}
     >
       <div className="flex items-center justify-between px-6 sm:px-12 h-full">
@@ -70,7 +70,7 @@ const MainHeader = () => {
             to="/watchlist"
             className="text-white text-sm hover:text-gray-300"
           >
-            Danh Sách xem sau 
+            Danh Sách xem sau
           </NetflixNavigationLink>
 
           <NetflixNavigationLink
@@ -85,10 +85,7 @@ const MainHeader = () => {
         <div className="flex items-center gap-4 relative z-[50]">
           <SearchBox />
 
-          {/* Notifications */}
-          <button className="text-white hover:text-gray-300">
-            <Bell size={22} />
-          </button>
+          <NotificationBell />
 
           {/* Avatar dropdown */}
           {isSignedIn && (
@@ -98,7 +95,7 @@ const MainHeader = () => {
                 className="focus:outline-none"
               >
                 <img
-                  src={user?.imageUrl || "/avatar.png"} 
+                  src={user?.imageUrl || "/avatar.png"}
                   alt="user_avatar"
                   className="w-8 h-8 rounded-md border border-gray-700"
                 />
@@ -118,7 +115,7 @@ const MainHeader = () => {
 
                   <button
                     onClick={() => {
-                      signOut(); 
+                      signOut();
                       setUserOpen(false);
                     }}
                     className="block w-full text-left px-4 py-2 hover:bg-gray-800"
