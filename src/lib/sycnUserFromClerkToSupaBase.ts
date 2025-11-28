@@ -29,11 +29,11 @@ export async function syncUserToSupabase(user: UserResource) {
       .single();
 
     if (error) {
-      console.error("❌ Lỗi khi upsert user:", error);
+      // console.error("❌ Lỗi khi upsert user:", error);
     } else {
-      console.log("✅ User đã được đồng bộ với Supabase:", data);
+      // console.log("✅ User đã được đồng bộ với Supabase:", data);
     }
   } catch (err) {
-    console.error("🚨 Lỗi không mong đợi khi sync user:", err);
+    // console.error("🚨 Lỗi không mong đợi khi sync user:", err);
   }
 }

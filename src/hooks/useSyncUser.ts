@@ -7,7 +7,7 @@ export default function useSyncUser() {
 
   useEffect(() => {
     if (isSignedIn && user) {
-      console.log("🔄 Syncing Clerk user → Supabase...");
+      // console.log("🔄 Syncing Clerk user → Supabase...");
       syncUserToSupabase(user);
     }
   }, [isSignedIn, user?.id, user?.updatedAt]); 
